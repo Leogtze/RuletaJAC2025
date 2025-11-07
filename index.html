@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Ruleta de Premios</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700&display=swap" rel="stylesheet">
+  <style>
+    :root{ --brand:#d61f26; --bg:#070a12; --bg2:#0c1426; }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;font-family:Poppins,system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Arial,sans-serif;
+      color:#e5e7eb;background:
+        radial-gradient(1200px 800px at 50% -200px, #16233f 0%, var(--bg2) 40%, var(--bg) 100%),
+        linear-gradient(180deg, #0a0f1b 0%, #070a12 100%);
+      display:grid;place-items:center;overflow:hidden;
+    }
+    .stage{position:relative;width:min(92vw,760px)}
+    .panel{position:relative;padding:28px 20px 22px;border-radius:22px;background:linear-gradient(180deg,#ffffff12,#ffffff08);border:1px solid #ffffff20;box-shadow:0 30px 80px #0008,inset 0 1px 0 #ffffff22}
+    .glow{position:absolute;inset:-10%;filter:blur(60px);opacity:.35;pointer-events:none;background:conic-gradient(from 180deg at 50% 50%,#00aaff10,#ff00aa10,#ffaa0010,#00ffaa10,#00aaff10);border-radius:24px;animation:slowspin 20s linear infinite}
+    @keyframes slowspin{to{transform:rotate(360deg)}}
+    .header{display:flex;justify-content:center;align-items:center;margin-bottom:16px}
+    .header h1{margin:0;font-size:22px;letter-spacing:.3px}
+    .wrap{position:relative;display:grid;place-items:center}
+    canvas#wheel{width:min(86vw,660px);height:min(86vw,660px);display:block;filter:drop-shadow(0 40px 60px #0008)}
+
+    /* Flecha/puntero visible */
+    .pointer{position:absolute;top:-6px;left:50%;transform:translateX(-50%);width:0;height:0;z-index:3;
+      border-left:20px solid transparent;border-right:20px solid transparent;border-bottom:34px solid #f8fafc;
+      filter:drop-shadow(0 2px 8px #0009);
+    }
+    .pointer::after{content:"";position:absolute;left:-17px;top:6px;width:34px;height:20px;border-radius:10px 10px 2px 2px;background:linear-gradient(180deg,#cbd5e1,#94a3b8);box-shadow:inset 0 1px 0 #fff8}
+    .rivet{position:absolute;top:20px;left:50%;transform:translateX(-50%);width:10px;height:10px;border-radius:50%;background:#0b1220;border:2px solid #e2e8f0;z-index:4}
+
+    .cta{margin-top:18px;display:flex;justify-content:center}
+    #spin{appearance:none;border:none;cursor:pointer;padding:14px 22px;font-weight:700;letter-spacing:.3px;color:white;background:linear-gradient(180deg,#f43f5e,#d61f26);border-radius:14px;box-shadow:0 16px 40px #d61f2640,inset 0 1px 0 #ffffff66;transition:transform .08s ease,box-shadow .2s ease}
+    #spin:hover{transform:translateY(-1px);box-shadow:0 22px 50px #d61f2660,inset 0 1px 0 #fff8}
+
+    .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#0b1220cc;border:1px solid #ffffff26;padding:10px 14px;border-radius:12px;font-size:15px;display:none}
+    #fx{position:fixed;inset:0;pointer-events:none}
+    .glass{position:absolute;inset:auto;width:60%;height:50%;top:8%;left:20%;pointer-events:none;border-radius:50%;background:radial-gradient(90% 50% at 50% 0%,#ffffff22,transparent 60%);filter:blur(6px);transform:rotate(-12deg)}
+  </style>
+</head>
+<body>
+  <div class="stage">
+    <div class="glow"></div>
+    <div class="panel">
+      <div class="header"><h1>Ruleta de Premios</h1></div>
+      <div class="wrap">
+        <div class="pointer"></div>
+        <div class="rivet"></div>
+        <canvas id="wheel" width="720" height="720" aria-label="ruleta"></canvas>
+        <div class="glass"></div>
+      </div>
+      <div class="cta"><button id="spin">Girar ahora</button></div>
+    </div>
+  </div>
+  <canvas id="fx"></canvas>
+  <div class="toast" id="toast"></div>
+
+  <script>
+    // ===== Config rápida =====
+    const PRIZES = [
+      { label:"Tintado gratis", color:"#0ea5e9", weight:1 },
+      { label:"10% en accesorios", color:"#1f2937", weight:1 },
+      { label:"Primer servicio", color:"#a855f7", weight:1 },
+      { label:"Kit bienvenida", color:"#22c55e", weight:1 },
+      { label:"Tapetes premium", color:"#f59e0b", weight:1 },
+      { label:"$2,000 refacciones", color:"#ef4444", weight:1 },
+      { label:"Detalle cerámico -50%", color:"#14b8a6", weight:1 },
+      { label:"Gorra + termo", color:"#6366f1", weight:1 },
+    ];
+
+    // ===== Setup =====
+    const canvas = document.getElementById('wheel');
+    const ctx = canvas.getContext('2d');
+    const fx = document.getElementById('fx');
+    const fctx = fx.getContext('2d');
+    const TAU = Math.PI*2; const R = canvas.width/2;
+
+    let angle = 0;          // ángulo actual
+    let angVel = 0;         // velocidad angular (rad/s)
+    let angAcc = 0;         // desaceleración (rad/s^2)
+    let spinning = false;   // estado
+    let targetIndex = null; // índice objetivo
+
+    // ===== Utilidades =====
+    const clamp=(n,min,max)=>Math.min(max,Math.max(min,n));
+    function weightedIndex(items){
+      const total = items.reduce((s,p)=>s+(p.weight||1),0);
+      let r = Math.random()*total;
+      for(let i=0;i<items.length;i++){ r -= (items[i].weight||1); if(r<=0) return i; }
+      return items.length-1;
+    }
+
+    // ===== Dibujo con profundidad =====
+    function drawWheel(a){
+      ctx.clearRect(0,0,canvas.width,canvas.height);
+      ctx.save(); ctx.translate(R,R); ctx.rotate(a);
+      const n = PRIZES.length; const slice = TAU/n; const rim=10;
+
+      // sombra externa
+      ctx.beginPath(); ctx.arc(0,0,R-2,0,TAU);
+      const shadow = ctx.createRadialGradient(0,0,R*0.3, 0,0,R);
+      shadow.addColorStop(0,'#00000022'); shadow.addColorStop(1,'#000000aa');
+      ctx.fillStyle = shadow; ctx.fill();
+
+      // aro metálico
+      ctx.beginPath(); ctx.arc(0,0,R-rim,0,TAU); ctx.arc(0,0,R-26,0,TAU,true); ctx.closePath();
+      const ring = ctx.createLinearGradient(-R,0,R,0);
+      ring.addColorStop(0,'#9fb3c8'); ring.addColorStop(.5,'#e5eef6'); ring.addColorStop(1,'#9fb3c8');
+      ctx.fillStyle = ring; ctx.fill();
+
+      // disco base
+      ctx.beginPath(); ctx.arc(0,0,R-28,0,TAU); ctx.fillStyle='#0b1220'; ctx.fill();
+
+      // segmentos
+      for(let i=0;i<n;i++){
+        ctx.beginPath(); ctx.moveTo(0,0); ctx.arc(0,0,R-28,i*slice,(i+1)*slice); ctx.closePath();
+        const g = ctx.createRadialGradient(0,0,R*0.15, 0,0,R-28);
+        const base = PRIZES[i].color || (i%2? '#1f2937':'#0ea5e9');
+        g.addColorStop(0, shade(base,.22)); g.addColorStop(1, base);
+        ctx.fillStyle=g; ctx.fill();
+        ctx.strokeStyle='#ffffff24'; ctx.lineWidth=2; ctx.stroke();
+
+        // texto legible (contorno + relleno)
+        ctx.save(); ctx.rotate(i*slice + slice/2); ctx.textAlign='center';
+        ctx.font='700 24px Poppins';
+        ctx.lineWidth=4; ctx.strokeStyle='rgba(0,0,0,.65)';
+        ctx.fillStyle='#f8fafc';
+        drawWrapped(PRIZES[i].label, R*0.6, 26);
+        ctx.restore();
+      }
+
+      // centro abombado + anillo rojo
+      ctx.beginPath(); ctx.arc(0,0,R*0.16,0,TAU);
+      const cap = ctx.createRadialGradient(-R*0.05,-R*0.05,2, 0,0,R*0.18);
+      cap.addColorStop(0,'#ffffffdd'); cap.addColorStop(1,'#8b9bb0');
+      ctx.fillStyle=cap; ctx.fill();
+      ctx.beginPath(); ctx.arc(0,0,R*0.22,0,TAU); ctx.lineWidth=10; ctx.strokeStyle='#d61f26'; ctx.stroke();
+
+      ctx.restore();
+    }
+
+    function drawWrapped(text, radius, lineHeight){
+      const words = text.split(' '); let line='', lines=[];
+      const m = ctx; words.forEach(w=>{ const t=(line? line+' ':'')+w; if(m.measureText(t).width > radius*1.6){ lines.push(line); line=w; } else line=t; });
+      lines.push(line);
+      const startY = -((lines.length-1)*lineHeight)/2;
+      lines.forEach((ln,i)=>{ ctx.strokeText(ln, radius, startY+i*lineHeight); ctx.fillText(ln, radius, startY+i*lineHeight); });
+    }
+
+    function shade(hex, amt){
+      const c=hex.replace('#',''); const num=parseInt(c,16);
+      let r=(num>>16)+Math.round(255*amt), g=((num>>8)&0xFF)+Math.round(255*amt), b=(num&0xFF)+Math.round(255*amt);
+      r=clamp(r,0,255); g=clamp(g,0,255); b=clamp(b,0,255);
+      return '#'+((1<<24)+(r<<16)+(g<<8)+b).toString(16).slice(1);
+    }
+
+    // ===== Bucle a 60/120/144Hz (delta time) =====
+    let last=performance.now();
+    function raf(now){
+      const dt=Math.min(0.032,(now-last)/1000); last=now;
+      if(spinning){
+        // Frenado lineal: ω->0 en T definido
+        angVel = Math.max(0, angVel - angAcc*dt);
+        angle += angVel*dt;
+        if(angVel===0){ spinning=false; snapToTarget(); showResult(); confetti(); }
+      }
+      drawWheel(angle);
+      requestAnimationFrame(raf);
+    }
+
+    // ===== Giro con tope de 5s =====
+    function spin(){
+      if(spinning || angVel>0) return;
+      const n=PRIZES.length; const slice=TAU/n;
+      targetIndex = weightedIndex(PRIZES);
+
+      // centro objetivo bajo la flecha (arriba)
+      const current=((angle%TAU)+TAU)%TAU;
+      const targetCenter=(n - targetIndex)*slice - slice/2;
+      let diff=targetCenter - current; while(diff<0) diff+=TAU;
+
+      const turns = 4 + Math.random()*1.2; // 4.0–5.2 vueltas (rápido)
+      const total = diff + TAU*turns;      // distancia angular total a recorrer
+
+      // Elegimos T en [3.8, 4.9]s para cumplir el máximo 5s
+      const T = 3.8 + Math.random()*1.1;
+      angVel = (2*total)/T;    // ω0 = 2s/T con s=total
+      angAcc = angVel / T;     // desaceleración constante
+      spinning = true; toast('¡Suerte!');
+    }
+
+    // Alinea perfectamente al centro del segmento objetivo
+    function snapToTarget(){
+      const n=PRIZES.length; const slice=TAU/n;
+      const targetCenter=(n - targetIndex)*slice - slice/2;
+      const current=((angle%TAU)+TAU)%TAU;
+      angle += (targetCenter - current);
+    }
+
+    function showResult(){
+      const n=PRIZES.length; const slice=TAU/n; const current=((angle%TAU)+TAU)%TAU;
+      const hit = Math.floor(((TAU - current)/slice)%n);
+      toast(`Resultado: ${PRIZES[hit].label}`);
+    }
+
+    // ===== FX: confeti =====
+    function confetti(){
+      fx.width=innerWidth; fx.height=innerHeight;
+      const P=Array.from({length:220},()=>({x:innerWidth/2,y:innerHeight*0.15,r:2+Math.random()*3,vx:(Math.random()-.5)*8,vy:-8-Math.random()*6,g:0.22+Math.random()*0.08,a:1}));
+      let frames=0; (function loop(){ fctx.clearRect(0,0,fx.width,fx.height); P.forEach(p=>{p.vy+=p.g;p.x+=p.vx;p.y+=p.vy;p.a-=0.012; fctx.globalAlpha=Math.max(0,p.a); fctx.beginPath(); fctx.arc(p.x,p.y,p.r,0,TAU); fctx.fillStyle=`hsl(${(p.x+p.y)%360} 85% 60%)`; fctx.fill();}); if(frames++<160) requestAnimationFrame(loop);})();
+    }
+
+    // UI
+    document.getElementById('spin').addEventListener('click', spin);
+    window.addEventListener('resize', ()=>{fx.width=innerWidth;fx.height=innerHeight});
+    const tEl=document.getElementById('toast'); let tTimer=null; function toast(msg){clearTimeout(tTimer); tEl.textContent=msg; tEl.style.display='block'; tTimer=setTimeout(()=>tEl.style.display='none',2200)}
+
+    // init
+    drawWheel(angle); requestAnimationFrame(raf);
+  </script>
+</body>
+</html>
