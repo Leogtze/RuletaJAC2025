@@ -1,0 +1,287 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Ruleta de Premios - Expo JAC</title>
+<style>
+  :root{
+    --bg:#0f1724;
+    --card:#0b1220;
+    --text:#e6eef8;
+    --accent:#ffb020;
+  }
+  html,body{height:100%;margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial;}
+  body{background:linear-gradient(180deg,#071126 0%, #0f1b2a 100%);color:var(--text);display:flex;align-items:center;justify-content:center;padding:20px;}
+  .container{max-width:980px;width:100%;background:rgba(255,255,255,0.03);border-radius:12px;padding:22px;box-shadow:0 8px 30px rgba(2,6,23,0.6);}
+  h1{margin:0 0 10px;font-size:22px;display:flex;align-items:center;gap:12px}
+  p.lead{margin:0 0 18px;color:#cfe7ffb3}
+  .layout{display:flex;gap:24px;flex-wrap:wrap;}
+  .wheel-wrap{flex:1 1 420px;min-width:300px;display:flex;align-items:center;justify-content:center;flex-direction:column;}
+  canvas#wheel{border-radius:50%;}
+  .pointer{width:0;height:0;border-left:18px solid transparent;border-right:18px solid transparent;border-bottom:26px solid var(--accent);margin-top:10px}
+  .controls{display:flex;flex-direction:column;gap:12px;align-items:center;margin-top:16px}
+  button{background:var(--accent);border:0;padding:10px 18px;border-radius:8px;font-weight:700;color:#08101a;cursor:pointer}
+  button[disabled]{opacity:.5;cursor:not-allowed}
+  .side{width:320px;min-height:220px;padding:18px;background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));border-radius:10px}
+  ul.prizes{padding-left:18px;margin:6px 0 0}
+  li{margin:6px 0}
+  .result{margin-top:12px;padding:12px;border-radius:8px;background:rgba(0,0,0,0.25);color:var(--text)}
+  .coupon{display:flex;gap:12px;align-items:center;justify-content:space-between;margin-top:10px;background:#081827;padding:10px;border-radius:8px}
+  .small{font-size:13px;color:#bcd9ffb0}
+  footer{margin-top:18px;font-size:13px;color:#9fbbe0}
+  @media(max-width:880px){ .layout{flex-direction:column-reverse} .side{width:100%} }
+</style>
+</head>
+<body>
+  <div class="container" role="main">
+    <h1>🎯 Ruleta de Premios — Expo JAC</h1>
+    <p class="lead">Acercaste el teléfono al vehículo correcto. ¡Gira la ruleta y gana uno de los premios disponibles!</p>
+
+    <div class="layout">
+      <div class="wheel-wrap" aria-live="polite">
+        <canvas id="wheel" width="520" height="520" role="img" aria-label="Ruleta de premios"></canvas>
+        <div class="pointer" aria-hidden="true"></div>
+
+        <div class="controls">
+          <div id="msg" class="small">Tag: <span id="tagVal">—</span></div>
+          <button id="spinBtn">Girar la ruleta</button>
+          <div id="notice" class="small">Una sola participación por dispositivo. Si separaste hoy con ≥ $5,000, muestra esto al staff para reclamar tu bono extra.</div>
+        </div>
+      </div>
+
+      <aside class="side" aria-label="Información de premios">
+        <h3 style="margin:0 0 8px">Premios disponibles</h3>
+        <ul class="prizes" id="prizeList">
+          <!-- se llena por JS -->
+        </ul>
+
+        <div id="outcome" class="result" style="display:none">
+          <strong id="wonTitle"></strong>
+          <div id="wonDesc" class="small" style="margin-top:6px"></div>
+
+          <div class="coupon" id="couponBox" style="display:none">
+            <div>
+              <div style="font-weight:700" id="couponCode"></div>
+              <div class="small">Presenta este código al staff para reclamar.</div>
+            </div>
+            <div>
+              <button id="copyBtn">Copiar</button>
+            </div>
+          </div>
+
+          <div style="margin-top:10px">
+            <button id="claimBtn" style="background:#2b6cb0;color:white">Quiero reclamar</button>
+          </div>
+        </div>
+
+        <div id="already" class="result" style="display:none">
+          <strong>Ya participaste en este dispositivo</strong>
+          <div class="small" style="margin-top:6px">Si necesitas reclamar un premio y tu teléfono ya giró, avisa al staff con el código que te dieron.</div>
+        </div>
+
+        <footer>Nota: se respeta privacidad. No almacenamos datos en servidor localmente. Si quieres ver registros, pide la versión con Google Sheets.</footer>
+      </aside>
+    </div>
+  </div>
+
+<script>
+/*
+  Ruleta client-side (sin servidor).
+  - Configura premios en la constante PRIZES abajo.
+  - URL de RFID: https://TU_HOST/ruleta/?tag=JAC-RFID-01
+  - Para prevenir varias participaciones en el mismo dispositivo usamos localStorage (opcional).
+  - Puedes personalizar duración/velocidad/física fácilmente.
+*/
+
+const PRIZES = [
+  {label: "Bono $1,500 en accesorios", desc:"Se acredita como descuento al separar con ≥ $5,000", codePrefix:"ACCES-"},
+  {label: "Llavero JAC oficial", desc:"Llavero exclusivo de la expo", codePrefix:"LLAV-"},
+  {label: "Cupón café $150", desc:"Vale por un café en el stand", codePrefix:"CAFE-"},
+  {label: "1er sorteo final: Servicio gratis", desc:"Participa en el sorteo final", codePrefix:"SRV-"},
+  {label: "Sticker edición expo", desc:"Sticker coleccionable JAC", codePrefix:"STKR-"},
+  {label: "Kit limpieza interior", desc:"Kit para mantener tu auto", codePrefix:"KIT-"},
+  {label: "Accesorio sorpresa", desc:"Accesorio sorpresa para tu unidad", codePrefix:"ACC-"},
+  {label: "Entrada extra al sorteo VIP", desc:"Duplica tu probabilidad en el sorteo final", codePrefix:"VIP-"}
+];
+
+// --- Utilities ---
+function $(sel){return document.querySelector(sel)}
+function randInt(max){return Math.floor(Math.random()*max)}
+
+// Get URL tag param
+const params = new URLSearchParams(location.search);
+const tag = params.get('tag') || 'unknown';
+$('#tagVal').textContent = tag;
+
+// Populate prize list UI
+const prizeListEl = $('#prizeList');
+PRIZES.forEach(p => {
+  const li = document.createElement('li');
+  li.textContent = p.label + " — " + p.desc;
+  prizeListEl.appendChild(li);
+});
+
+// localStorage key to prevent re-spin
+const storageKey = 'ruleta_participated_' + (tag || 'all');
+const participated = localStorage.getItem(storageKey);
+
+// UI elements
+const spinBtn = $('#spinBtn');
+const outcomeEl = $('#outcome');
+const alreadyEl = $('#already');
+const wonTitle = $('#wonTitle');
+const wonDesc = $('#wonDesc');
+const couponBox = $('#couponBox');
+const couponCodeEl = $('#couponCode');
+const copyBtn = $('#copyBtn');
+const claimBtn = $('#claimBtn');
+
+if (participated){
+  // show already spun
+  spinBtn.disabled = true;
+  alreadyEl.style.display = 'block';
+}
+
+// --- Wheel drawing & spin mechanics ---
+const canvas = $('#wheel');
+const ctx = canvas.getContext('2d');
+const W = canvas.width, H = canvas.height;
+const cx = W/2, cy = H/2, radius = Math.min(W,H)/2 - 8;
+const slices = PRIZES.length;
+const colors = ["#e76f51","#f4a261","#ffd166","#06d6a0","#118ab2","#073b4c","#9b5de5","#f15bb5"];
+
+let angle = 0, angularVelocity = 0, spinning = false;
+
+function drawWheel(){
+  ctx.clearRect(0,0,W,H);
+  // outer circle
+  for(let i=0;i<slices;i++){
+    const start = angle + i*(2*Math.PI/slices);
+    const end = start + (2*Math.PI/slices);
+    ctx.beginPath();
+    ctx.moveTo(cx,cy);
+    ctx.arc(cx,cy,radius,start,end);
+    ctx.closePath();
+    ctx.fillStyle = colors[i % colors.length];
+    ctx.fill();
+    // text
+    ctx.save();
+    ctx.translate(cx,cy);
+    const mid = (start+end)/2 - angle;
+    ctx.rotate((start+end)/2);
+    ctx.textAlign = "right";
+    ctx.fillStyle = "#021022";
+    ctx.font = "bold 16px Inter, sans-serif";
+    ctx.fillText(PRIZES[i].label, radius - 12, 6);
+    ctx.restore();
+  }
+  // center circle
+  ctx.beginPath();
+  ctx.arc(cx,cy,60,0,2*Math.PI);
+  ctx.fillStyle = "#021022";
+  ctx.fill();
+  ctx.fillStyle = "#fff";
+  ctx.textAlign = "center";
+  ctx.font = "bold 18px Inter, sans-serif";
+  ctx.fillText("GIRAR", cx, cy+6);
+}
+
+function animate(){
+  if(!spinning) return;
+  angularVelocity *= 0.995; // friction
+  angle += angularVelocity;
+  if(Math.abs(angularVelocity) < 0.0005){
+    spinning = false;
+    angularVelocity = 0;
+    onStop();
+  }
+  drawWheel();
+  requestAnimationFrame(animate);
+}
+
+// compute selected index from final angle (pointer at top)
+function getSelectedIndex(){
+  // Normalize angle to [0,2PI)
+  let a = angle % (2*Math.PI);
+  if(a < 0) a += 2*Math.PI;
+  // pointer is at -PI/2 (top). Compute which slice covers that angle.
+  const pointerAngle = (3*Math.PI/2 - a + 2*Math.PI) % (2*Math.PI);
+  const sliceAngle = 2*Math.PI / slices;
+  let idx = Math.floor(pointerAngle / sliceAngle);
+  // idx in [0..slices-1]
+  idx = (slices - 1) - idx; // because of canvas rotation/direction, adjust to match labels
+  idx = (idx + slices) % slices;
+  return idx;
+}
+
+function spinOnce(){
+  if(spinning) return;
+  spinBtn.disabled = true;
+  // Random initial angular velocity (tuned)
+  const minSpins = 4; const maxSpins = 7;
+  const spins = minSpins + Math.random() * (maxSpins - minSpins);
+  // Add some randomness but allow optional seed by tag: (deterministic seed commented)
+  // const seed = hashString(tag + Date.now());
+  const targetAngular = spins * 2 * Math.PI + (Math.random() * 2*Math.PI);
+  angularVelocity = 0.5 + (targetAngular / 200); // tuning factor
+  spinning = true;
+  animate();
+}
+
+// Called when spin stops
+function onStop(){
+  const idx = getSelectedIndex();
+  const prize = PRIZES[idx];
+  // generate coupon code (prefix + random)
+  const code = (prize.codePrefix || "PR-") + Math.random().toString(36).slice(2,8).toUpperCase();
+  wonTitle.textContent = prize.label;
+  wonDesc.textContent = prize.desc;
+  couponCodeEl.textContent = code;
+  couponBox.style.display = 'flex';
+  outcomeEl.style.display = 'block';
+  // block future spins on this device+tag
+  localStorage.setItem(storageKey, JSON.stringify({ts:Date.now(), prize:prize.label, code:code}));
+  spinBtn.disabled = true;
+  // show copy action
+  copyBtn.onclick = ()=> {
+    navigator.clipboard?.writeText(code).then(()=> alert('Código copiado: ' + code)).catch(()=> alert('No se pudo copiar'));
+  };
+  claimBtn.onclick = ()=> {
+    // Acción: instrucción para reclamar (no hay servidor)
+    alert('Muestra este código al staff: ' + code + '\nSi separaste con ≥ $5,000 hoy, obtendrás el bono extra al confirmarlo.');
+  };
+}
+
+// initial draw
+drawWheel();
+spinBtn.addEventListener('click', spinOnce);
+
+// Accessibility: allow space/enter to spin
+document.addEventListener('keydown', (e)=>{ if((e.code==='Space' || e.code==='Enter') && !spinBtn.disabled) { e.preventDefault(); spinOnce(); } });
+
+// Optional: if already participated, show details
+if(participated){
+  try {
+    const info = JSON.parse(localStorage.getItem(storageKey));
+    if(info){
+      $('#wonTitle').textContent = info.prize || 'Premio anterior';
+      $('#wonDesc').textContent = 'Código anterior: ' + (info.code || '(sin código)');
+      couponCodeEl.textContent = info.code || '—';
+      couponBox.style.display = 'flex';
+      outcomeEl.style.display = 'block';
+      alreadyEl.style.display = 'block';
+    }
+  }catch(e){}
+}
+
+/* Optional helper: deterministic hash if quieres un spin determinista por tag
+function hashString(str){
+  let h=2166136261;
+  for(let i=0;i<str.length;i++){ h ^= str.charCodeAt(i); h += (h<<1) + (h<<4) + (h<<7) + (h<<8) + (h<<24); }
+  return h >>> 0;
+}
+*/
+</script>
+</body>
+</html>
