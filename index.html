@@ -3,8 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no" />
-<title>Tragamonedas JAC — PRO</title>
-<link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
+<title>Tragamonedas JAC — OFFLINE PRO</title>
 <style>
   :root{
     --bg1:#090012; --bg2:#2a0750; --bg3:#0a031b;
@@ -13,8 +12,7 @@
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
   html,body{margin:0;height:100%;background:radial-gradient(160% 160% at 50% -20%, var(--bg2), var(--bg1) 40%, var(--bg3));color:#eee;font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,'Helvetica Neue',Arial;overflow:hidden}
   body{display:flex}
-
-  /* UI Overlay */
+  canvas{position:fixed;inset:0;width:100%;height:100%;z-index:1;touch-action:none}
   .wrap{position:fixed;inset:0;z-index:3;display:flex;flex-direction:column;justify-content:space-between;padding:10px 12px calc(env(safe-area-inset-bottom,0) + 14px);pointer-events:none}
   header{display:flex;align-items:center;justify-content:space-between;gap:10px;pointer-events:auto}
   .brand{display:flex;align-items:center;gap:10px}
@@ -24,7 +22,6 @@
   .hud{display:flex;align-items:center;gap:8px}
   .pill{font-weight:800;color:var(--gold);font-size:12px;padding:6px 10px;border-radius:999px;border:1.6px solid rgba(255,215,106,.8);background:rgba(255,215,106,.10);box-shadow:inset 0 0 12px rgba(255,215,106,.18)}
   .toggle{appearance:none;border:1.6px solid rgba(255,215,106,.8);background:rgba(0,0,0,.35);color:#fff;border-radius:999px;padding:6px 10px;font-size:12px;display:flex;align-items:center;gap:6px;cursor:pointer}
-
   .controls{display:flex;align-items:center;justify-content:center;margin-top:auto;pointer-events:auto}
   .btn{--size:114px;width:var(--size);height:var(--size);border-radius:999px;border:none;cursor:pointer;position:relative;display:grid;place-items:center;
     background:radial-gradient(120% 120% at 50% 0%, #4b0a99, #2a0a52 45%, #180634);
@@ -35,23 +32,18 @@
   .btn:active{transform:translateY(1px) scale(.985)}
   .btn[disabled]{opacity:.55;filter:grayscale(.25);cursor:not-allowed}
   @keyframes spinRing{to{transform:rotate(1turn)}}
-
-  canvas{position:fixed;inset:0;width:100%;height:100%;z-index:1}
-
   .modal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(5,3,12,.82);backdrop-filter:blur(5px);z-index:5}
   .modal.show{display:flex}
   .card{min-width:74%;max-width:520px;padding:24px 18px 18px;border-radius:24px;border:2px solid rgba(255,215,106,.98);background:radial-gradient(120% 140% at 50% 0%, rgba(255,255,255,.12), rgba(255,255,255,.05));box-shadow:0 24px 56px rgba(0,0,0,.9), inset 0 0 140px rgba(255,215,106,.18);text-align:center;position:relative;overflow:hidden}
   .card h2{margin:0 0 8px;background:linear-gradient(90deg,var(--gold),#fff,var(--gold));-webkit-background-clip:text;background-clip:text;color:transparent;font-size:30px;letter-spacing:1.6px}
   .card p{margin:0 0 16px;opacity:.96}
   .ok{margin-top:6px;padding:10px 20px;border-radius:999px;border:1.6px solid rgba(255,215,106,.95);background:rgba(0,0,0,.68);color:#fff;font-size:14px;cursor:pointer}
-
   .orient{position:fixed;inset:0;background:#070312;color:#eee;display:none;align-items:center;justify-content:center;z-index:6;text-align:center;padding:24px}
   .orient.show{display:flex}
 </style>
 </head>
 <body>
 <canvas id="stage" aria-label="Máquina tragamonedas"></canvas>
-
 <div class="wrap">
   <header>
     <div class="brand">
@@ -63,13 +55,10 @@
       <button id="sound" class="toggle" aria-pressed="true"><span>🔊</span><span>Sonido</span></button>
     </div>
   </header>
-
   <div class="controls">
     <button id="spin" class="btn"><span>Girar</span></button>
   </div>
 </div>
-
-<!-- PREMIO -->
 <div class="modal" id="win">
   <div class="card">
     <h2>¡PREMIO!</h2>
@@ -77,8 +66,6 @@
     <button class="ok" data-close="#win">Aceptar</button>
   </div>
 </div>
-
-<!-- PREMIO MAYOR -->
 <div class="modal" id="jack">
   <div class="card">
     <h2>🎉 ¡PREMIO MAYOR! 🎉</h2>
@@ -86,345 +73,259 @@
     <button class="ok" data-close="#jack">Continuar</button>
   </div>
 </div>
-
 <div class="orient" id="orient">
   <div>
     <h3>Gira tu teléfono</h3>
     <p>Este juego está optimizado para orientación vertical.</p>
   </div>
 </div>
-
-<!-- PIXI.js & Filters -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pixi.js/7.3.3/pixi.min.js" crossorigin="anonymous"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pixi-filters/5.3.1/pixi-filters.min.js" crossorigin="anonymous"></script>
 <script>
-/* =========================================================
-   Parámetros base
-========================================================= */
-const ROWS=3, COLS=5, MAX_SPINS=10, PAYLINE=1;
+/* ==============================================
+   Motor Canvas2D OFFLINE
+============================================== */
+const ROWS=3, COLS=5, PAYLINE=1, MAX_SPINS=10;
 const JACKPOT_PROB=0.05, WIN_PROB=0.10;
-const SYM_IDS = ['sedan','suv','pickup','vol','velo','key','bat','star','bono','test'];
+const SYMS = ['sedan','suv','pickup','volante','veloc','llaves','bateria','estrella','bono','test'];
 
-/* =========================================================
-   App & escena
-========================================================= */
-const app = new PIXI.Application({ view: document.getElementById('stage'), resizeTo: window, antialias: true, backgroundAlpha: 0 });
-const stage = app.stage;
-let W=innerWidth, H=innerHeight;
+const cvs = document.getElementById('stage'); const ctx = cvs.getContext('2d');
+let W=innerWidth, H=innerHeight, DPR=window.devicePixelRatio||1;
+function resize(){
+  W=innerWidth; H=innerHeight; DPR=window.devicePixelRatio||1;
+  cvs.width=W*DPR; cvs.height=H*DPR; cvs.style.width=W+'px'; cvs.style.height=H+'px';
+}
+addEventListener('resize', resize); addEventListener('orientationchange', resize); resize();
+
+function orientCheck(){ const isLand = matchMedia('(orientation: landscape)').matches; document.getElementById('orient').classList.toggle('show', isLand); }
+addEventListener('resize', orientCheck); addEventListener('orientationchange', orientCheck); orientCheck();
+
+/* Layout de la máquina */
+let reel = {x:0,y:0,w:0,h:0, cellH:0, cellW:0};
 function layout(){
-  W=innerWidth; H=innerHeight;
-  const isLand = matchMedia('(orientation: landscape)').matches;
-  document.getElementById('orient').classList.toggle('show', isLand);
-}
-addEventListener('resize', layout); addEventListener('orientationchange', layout); layout();
-
-/* Fondo con partículas suaves */
-const back = new PIXI.Container(); stage.addChild(back);
-const bgGlow = new PIXI.Graphics(); bgGlow.beginFill(0xff28d0, .08).drawCircle(0,0, 360).endFill(); bgGlow.x=W*0.2; bgGlow.y=H*0.25;
-const bgGlow2 = new PIXI.Graphics(); bgGlow2.beginFill(0x8a3dff, .08).drawCircle(0,0, 420).endFill(); bgGlow2.x=W*0.8; bgGlow2.y=H*0.35;
-back.addChild(bgGlow,bgGlow2);
-
-/* =========================================================
-   Generación de texturas de símbolos (vectoriales)
-========================================================= */
-function makeSymbolTexture(id, cellW, cellH){
-  const cont = new PIXI.Container();
-  const card = new PIXI.Graphics();
-  card.beginFill(0xffffff, 0.08).drawRoundedRect(0,0, cellW, cellH, Math.min(22, cellH*0.2)).endFill();
-  const border = new PIXI.Graphics();
-  border.lineStyle(4, 0xffd76a, 1).drawRoundedRect(0,0, cellW, cellH, Math.min(22, cellH*0.2));
-  const bevel = new PIXI.Graphics();
-  bevel.beginFill(0xffd76a, .18).drawRoundedRect(6,6, cellW-12, cellH-12, Math.min(18, cellH*0.16)).endFill();
-  cont.addChild(card, bevel, border);
-
-  const icon = new PIXI.Graphics();
-  icon.x = cellW/2; icon.y = cellH/2;
-  const G=0xffd76a;
-  switch(id){
-    case 'sedan':
-      icon.lineStyle(5, G, 1).drawPolygon([-70,20,70,20,50,-20,0,-45,-40,-45,-65,-20]);
-      icon.beginFill(G).drawCircle(-40,28,12).drawCircle(40,28,12).endFill();
-      break;
-    case 'suv':
-      icon.lineStyle(5, G, 1).drawPolygon([-72,22,72,22,58,-18,5,-45,-40,-45,-62,-18]);
-      icon.beginFill(G).drawCircle(-42,30,11).drawCircle(42,30,11).endFill();
-      break;
-    case 'pickup':
-      icon.lineStyle(5, G, 1).drawPolygon([-75,20,75,20,75,-18,25,-18,0,-45,-35,-45,-55,-18,-75,-18]);
-      icon.beginFill(G).drawCircle(-42,30,11).drawCircle(42,30,11).endFill();
-      break;
-    case 'vol':
-      icon.lineStyle(5, G, 1).drawCircle(0,0,50); icon.beginFill(G).drawCircle(0,0,20).endFill();
-      icon.lineStyle(4, G,1).moveTo(-35,0).lineTo(35,0).moveTo(-15,-20).lineTo(-55,-30).moveTo(15,-20).lineTo(55,-30);
-      break;
-    case 'velo':
-      icon.lineStyle(5, G, 1).drawCircle(0,10,44); icon.lineStyle(6, G, 1).moveTo(0,10).lineTo(26,-16);
-      break;
-    case 'key':
-      icon.lineStyle(5, G, 1).drawCircle(-20,-10,22);
-      icon.lineStyle(5, G, 1).moveTo(0,10).lineTo(60,60).moveTo(60,60).lineTo(74,46).moveTo(74,46).lineTo(86,58);
-      break;
-    case 'bat':
-      icon.lineStyle(5, G, 1).drawRoundedRect(-55,-30,110,60,10);
-      icon.beginFill(G).drawRect(56,-16,8,32).endFill();
-      icon.lineStyle(5, G, 1).moveTo(0,-26).lineTo(-18,14).moveTo(-18,14).lineTo(6,14).moveTo(6,14).lineTo(-10,44);
-      break;
-    case 'star':
-      icon.beginFill(G,1); icon.drawStar(0,0,5,36,18).endFill();
-      icon.lineStyle(3, G, .9).drawStar(0,0,5,36,18);
-      break;
-    case 'bono':
-      icon.lineStyle(5, G, 1).drawRoundedRect(-60,-28,120,56,12);
-      break;
-    case 'test':
-      icon.lineStyle(5, G, 1).drawRoundedRect(-60,-40,120,80,12);
-      icon.lineStyle(5, G, 1).moveTo(-40,-5).lineTo(40,-5).moveTo(-40,18).lineTo(10,18);
-      icon.beginFill(G).drawCircle(42,18,10).endFill();
-      break;
-  }
-  cont.addChild(icon);
-  return app.renderer.generateTexture(cont, {resolution: window.devicePixelRatio||1});
-}
-
-/* =========================================================
-   Reels + filtros pro
-========================================================= */
-let reelRect={x:0,y:0,w:0,h:0,cellH:0,cellW:0};
-function computeReelRect(){
   const w = Math.min(600, W*0.94);
   const h = Math.min(560, H*0.64);
-  reelRect = { x:(W-w)/2, y:(H-h)/2-20, w, h, cellH:(h-20)/3, cellW:(w-40)/COLS };
+  reel = { x:(W-w)/2, y:(H-h)/2-20, w, h, cellH:(h-20)/3, cellW:(w-40)/COLS };
 }
-computeReelRect();
+layout();
 
-const reelsCont = new PIXI.Container(); stage.addChild(reelsCont);
-const bezel = new PIXI.Graphics(); reelsCont.addChild(bezel);
-const mask = new PIXI.Graphics(); reelsCont.addChild(mask);
-const payline = new PIXI.Graphics(); reelsCont.addChild(payline);
-const columns=[]; // {strip:Container, sprites:[Sprite], y:number}
-
-function drawBezel(){
-  bezel.clear();
-  // marco exterior
-  bezel.lineStyle(6, 0xffd76a, 1).beginFill(0x0, .15).drawRoundedRect(reelRect.x-14, reelRect.y-14, reelRect.w+28, reelRect.h+28, 30).endFill();
-  // caja
-  bezel.lineStyle(3, 0xffffff, .08).beginFill(0x000000, .35).drawRoundedRect(reelRect.x, reelRect.y, reelRect.w, reelRect.h, 24).endFill();
-}
-function drawMask(){
-  mask.clear();
-  mask.beginFill(0xffffff,1).drawRoundedRect(reelRect.x, reelRect.y, reelRect.w, reelRect.h, 24).endFill();
-  reelsCont.mask = mask;
-}
-function drawPayline(){
-  payline.clear();
-  // línea con glow simulada por varias pasadas
-  for(let i=0;i<3;i++){
-    payline.lineStyle(2+i, 0x7df9ff, 0.3 - i*0.05);
-    payline.moveTo(reelRect.x+12, reelRect.y + reelRect.cellH*PAYLINE + 10);
-    payline.lineTo(reelRect.x + reelRect.w - 12, reelRect.y + reelRect.cellH*PAYLINE + 10);
-  }
-}
-
-const bloom = new PIXI.filters.AdvancedBloomFilter({threshold:.4, bloomScale:1.2, brightness:.9, blur:2});
-const kawase = new PIXI.filters.KawaseBlurFilter([2,3], 4, true);
-const godray = new PIXI.filters.GodrayFilter({ parallel:false, lacunarity:1.5, gain:.5, angle:30, time:0 });
-reelsCont.filters = [bloom, kawase];
-
-function buildColumns(){
-  columns.length=0;
-  reelsCont.removeChildren(); reelsCont.addChild(bezel); reelsCont.addChild(mask); reelsCont.addChild(payline);
-  const repeats=10;
-  for(let c=0;c<COLS;c++){
-    const col = new PIXI.Container();
-    col.x = reelRect.x + c*(reelRect.w/COLS);
-    col.y = reelRect.y;
-    reelsCont.addChild(col);
-    const strip = new PIXI.Container(); col.addChild(strip);
-    let y=10;
-    const sprites=[];
-    for(let r=0;r<repeats;r++){
-      for(const id of SYM_IDS){
-        const tex = makeSymbolTexture(id, reelRect.cellW, reelRect.cellH-6);
-        const sp = new PIXI.Sprite(tex);
-        sp.anchor.set(.5);
-        sp.x = reelRect.cellW/2;
-        sp.y = y + reelRect.cellH/2;
-        sp.filters = [new PIXI.filters.BlurFilter(0.5)];
-        strip.addChild(sp); sprites.push(sp);
-        y += reelRect.cellH;
-      }
-    }
-    columns.push({col, strip, sprites, y:0});
-  }
-  drawBezel(); drawMask(); drawPayline();
-}
-buildColumns();
-
-/* LED flicker */
-app.ticker.add((delta)=>{
-  const t = app.ticker.lastTime/1000;
-  bloom.brightness = 0.85 + Math.sin(t*2.4)*0.04;
-  godray.time += 0.005*delta;
-});
-
-/* =========================================================
-   Audio: WebAudio + samples embebidos
-========================================================= */
+/* Audio WebAudio (offline) */
 let audioOn=true, AC=null, master=null;
-function ensureAudio(){ if(AC) return; const C = window.AudioContext||window.webkitAudioContext; if(!C) return; AC=new C(); master=AC.createGain(); master.gain.value=.95; master.connect(AC.destination) }
-function tone(f=440,d=.1,type='sine',v=.22){
-  if(!audioOn) return; ensureAudio(); if(!AC) return;
-  const o=AC.createOscillator(), g=AC.createGain();
-  o.type=type; o.frequency.value=f; g.gain.value=v; o.connect(g).connect(master);
+function ensureAudio(){ if(AC) return; const C=window.AudioContext||window.webkitAudioContext; if(!C) return; AC=new C(); master=AC.createGain(); master.gain.value=.95; master.connect(AC.destination) }
+function tone(f=440,d=.1,type='sine',v=.22){ if(!audioOn) return; ensureAudio(); if(!AC) return;
+  const o=AC.createOscillator(), g=AC.createGain(); o.type=type; o.frequency.value=f; g.gain.value=v; o.connect(g).connect(master);
   const t=AC.currentTime; g.gain.setValueAtTime(0,t); g.gain.linearRampToValueAtTime(v,t+.01); g.gain.exponentialRampToValueAtTime(0.0001,t+d); o.start(t); o.stop(t+d+.02);
 }
-function fromB64ToAudio(b64){
-  if(!audioOn) return null; ensureAudio(); if(!AC) return null;
-  const bin = atob(b64); const len = bin.length; const buf = new Uint8Array(len);
-  for(let i=0;i<len;i++) buf[i]=bin.charCodeAt(i);
-  return AC.decodeAudioData(buf.buffer.slice(0));
-}
-async function playSample(b64, gain=0.9, rate=1){
-  if(!audioOn) return; ensureAudio(); if(!AC) return;
-  try{
-    const audioBuf = await fromB64ToAudio(b64);
-    const src = AC.createBufferSource(); src.buffer = audioBuf; src.playbackRate.value = rate;
-    const g = AC.createGain(); g.gain.value = gain; src.connect(g).connect(master); src.start();
-  }catch(e){ /* fallback a tono */ }
-}
-/* Tres samples muy ligeros (sintéticos en base64) */
-const S_WHOOSH = ""; // dejamos tonos/ruido en tiempo real para whoosh
-const S_TICK = "";   // usamos tone()
-const S_FANFARE = ""; // usamos secuencia de tones + clinks
-
-function whoosh(d=1.7){
-  if(!audioOn) return ()=>{}; ensureAudio(); if(!AC) return ()=>{};
+function whoosh(d=1.7){ if(!audioOn) return ()=>{}; ensureAudio(); if(!AC) return ()=>{};
   const len=Math.floor(AC.sampleRate*d); const buf=AC.createBuffer(1,len,AC.sampleRate); const ch=buf.getChannelData(0);
   for(let i=0;i<len;i++){ const t=i/len; ch[i]=(Math.random()*2-1)*(1-t) }
-  const src=AC.createBufferSource(); src.buffer=buf;
-  const bp=AC.createBiquadFilter(); bp.type='bandpass'; bp.frequency.value=1700; bp.Q.value=0.9;
-  const g=AC.createGain(); g.gain.value=.18; src.connect(bp).connect(g).connect(master); src.start();
-  return ()=>{ try{src.stop()}catch(e){} };
-}
-function playTick(i){ tone(260+i*60,.05,'square',.14) }
-function playThunk(){ tone(110,.08,'triangle',.26) }
+  const src=AC.createBufferSource(); src.buffer=buf; const bp=AC.createBiquadFilter(); bp.type='bandpass'; bp.frequency.value=1700; bp.Q.value=.9; const g=AC.createGain(); g.gain.value=.18; src.connect(bp).connect(g).connect(master); src.start(); return ()=>{try{src.stop()}catch(e){}} }
+function playTick(i){ tone(260+i*60,.05,'square',.14) } function playThunk(){ tone(110,.08,'triangle',.26) }
 function jingleWin(){ [880,1175,1760].forEach((f,i)=>setTimeout(()=>tone(f,.14,'triangle',.30),i*120)) }
 function jingleJack(){ [660,880,1320,1760,1320,880,660].forEach((f,i)=>setTimeout(()=>tone(f,.16,'square',.32),i*140)) }
 function coinClinks(){ for(let i=0;i<7;i++) setTimeout(()=>tone(1400+Math.random()*700,.06,'square',.18),80*i) }
 
-/* =========================================================
-   Spin avanzado con anticipation, bounce y stops escalonados
-========================================================= */
-let spinsLeft=MAX_SPINS, spinning=false, inJackpot=false;
-const counterEl = document.getElementById('counter'); function updateCounter(){ counterEl.textContent = `Tiradas restantes: ${spinsLeft}` }
-updateCounter();
-
-function decideOutcome(){
-  const r=Math.random();
-  if(r<JACKPOT_PROB) return 'JACKPOT';
-  if(r<JACKPOT_PROB+WIN_PROB) return 'WIN';
-  return 'NORMAL';
+/* Símbolos (vectoriales dibujados a mano) */
+function drawSymbol(gx, gy, gw, gh, id){
+  const cx=gx+gw/2, cy=gy+gh/2;
+  // tarjeta
+  ctx.save();
+  // glow borde dorado (simulado)
+  for(let i=6;i>=2;i--){ ctx.strokeStyle=`rgba(255,215,106,${0.06*i})`; ctx.lineWidth=i; roundRect(gx,gy,gw,gh,Math.min(22,gh*.2)); ctx.stroke(); }
+  // relleno
+  ctx.fillStyle='rgba(255,255,255,.10)'; roundRect(gx,gy,gw,gh,Math.min(22,gh*.2)); ctx.fill();
+  // bisel interno
+  ctx.fillStyle='rgba(255,215,106,.18)'; roundRect(gx+6,gy+6,gw-12,gh-12,Math.min(18,gh*.16)); ctx.fill();
+  // ícono dorado simple
+  ctx.translate(cx, cy+5); ctx.strokeStyle='#ffd76a'; ctx.fillStyle='#ffd76a'; ctx.lineWidth=5;
+  switch(id){
+    case 'sedan':
+      poly([-70,20,70,20,50,-20,0,-45,-40,-45,-65,-20]); fillWheels(-40,28,12,40,28,12); break;
+    case 'suv':
+      poly([-72,22,72,22,58,-18,5,-45,-40,-45,-62,-18]); fillWheels(-42,30,11,42,30,11); break;
+    case 'pickup':
+      poly([-75,20,75,20,75,-18,25,-18,0,-45,-35,-45,-55,-18,-75,-18]); fillWheels(-42,30,11,42,30,11); break;
+    case 'volante':
+      circle(0,0,50,false); circle(0,0,20,true); line(-35,0,35,0); line(-15,-20,-55,-30); line(15,-20,55,-30); break;
+    case 'veloc':
+      circle(0,10,44,false); ctx.lineWidth=6; line(0,10,26,-16); ctx.lineWidth=5; break;
+    case 'llaves':
+      circle(-20,-10,22,false); line(0,10,60,60); line(60,60,74,46); line(74,46,86,58); break;
+    case 'bateria':
+      rrect(-55,-30,110,60,10,false); rect(56,-16,8,32,true); lineW(0,-26,-18,14); lineW(-18,14,6,14); lineW(6,14,-10,44); break;
+    case 'estrella':
+      star(0,0,5,36,18,true); break;
+    case 'bono':
+      rrect(-60,-28,120,56,12,false); break;
+    case 'test':
+      rrect(-60,-40,120,80,12,false); line(-40,-5,40,-5); line(-40,18,10,18); circle(42,18,10,true); break;
+  }
+  ctx.restore();
+  // glare diagonal
+  ctx.save(); ctx.globalCompositeOperation='lighter'; ctx.translate(gx,gy);
+  const grd=ctx.createLinearGradient(-gw*.4,0,gw*.2,gh); grd.addColorStop(0,'rgba(255,255,255,0)'); grd.addColorStop(.5,'rgba(255,255,255,.18)'); grd.addColorStop(1,'rgba(255,255,255,0)');
+  ctx.fillStyle=grd; ctx.globalAlpha=.9; ctx.transform(1,0,-.2,1,0,0); ctx.fillRect(0,0,gw,gh); ctx.restore();
 }
-function pickId(){ return SYM_IDS[(Math.random()*SYM_IDS.length)|0]; }
+function roundRect(x,y,w,h,r){ ctx.beginPath(); ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r); ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath(); }
+function rrect(x,y,w,h,r,fill=true){ ctx.beginPath(); ctx.moveTo(x+w/2+r,y-h/2); ctx.save(); ctx.translate(x+w/2,y+h/2); roundRect(-w/2,-h/2,w,h,r); ctx.restore(); if(fill){ctx.fill()} else {ctx.stroke()} }
+function rect(x,y,w,h,fill){ ctx.beginPath(); ctx.rect(x,y,w,h); if(fill) ctx.fill(); else ctx.stroke(); }
+function line(x1,y1,x2,y2){ ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke(); }
+function lineW(x1,y1,x2,y2){ ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke(); }
+function circle(x,y,r,fill){ ctx.beginPath(); ctx.arc(x,y,r,0,Math.PI*2); if(fill) ctx.fill(); else ctx.stroke(); }
+function star(x,y,points,outer,inner,fill){ const step=Math.PI/points; ctx.beginPath(); for(let i=0;i<2*points;i++){ const r=(i%2? inner:outer); const ang=i*step - Math.PI/2; ctx.lineTo(x+Math.cos(ang)*r, y+Math.sin(ang)*r) } ctx.closePath(); if(fill) ctx.fill(); else ctx.stroke(); }
+function poly(arr){ ctx.beginPath(); ctx.moveTo(arr[0],arr[1]); for(let i=2;i<arr.length;i+=2) ctx.lineTo(arr[i],arr[i+1]); ctx.closePath(); ctx.stroke(); }
+function fillWheels(x1,y1,r1,x2,y2,r2){ circle(x1,y1,r1,true); circle(x2,y2,r2,true); }
 
-function animateColumnTo(colObj, targetY, dur, easeFn, onStop){
-  return new Promise(resolve=>{
-    const startY = colObj.strip.y || 0;
-    const start = performance.now();
-    function tick(ts){
-      const t = Math.min(1, (ts-start)/dur);
-      const e = easeFn(t);
-      colObj.strip.y = startY + (targetY - startY) * e;
-      if(t<1){ requestAnimationFrame(tick) }
-      else { onStop && onStop(); resolve(); }
+/* Partículas */
+const particles=[];
+function spawnCoins(x1,y1,w){ for(let i=0;i<90;i++){ particles.push({type:'coin',x:x1+Math.random()*w,y:y1-20-Math.random()*40, vx:(Math.random()*2-1)*1.2, vy:1+Math.random()*2.2, rot:Math.random()*Math.PI*2, vr:(Math.random()-.5)*.2, life:120+Math.random()*60}); } }
+function spawnConfetti(x1,y1,w){ for(let i=0;i<100;i++){ particles.push({type:'conf',x:x1+Math.random()*w,y:y1-20-Math.random()*40, vx:(Math.random()*2-1)*1.4, vy:1+Math.random()*2.6, rot:Math.random()*Math.PI*2, vr:(Math.random()-.5)*.3, life:120+Math.random()*60}); } }
+function drawParticles(){
+  for(let i=particles.length-1;i>=0;i--){
+    const p=particles[i]; p.x+=p.vx; p.y+=p.vy; p.vy*=1.01; p.rot+=p.vr; p.life--;
+    if(p.type==='coin'){ ctx.save(); ctx.translate(p.x*DPR,p.y*DPR); ctx.rotate(p.rot); const r=8*DPR; const grd=ctx.createRadialGradient(-r*.2,-r*.2, r*.2, 0,0,r); grd.addColorStop(0,'#fff'); grd.addColorStop(.5,'#ffd76a'); grd.addColorStop(1,'#b57b00'); ctx.fillStyle=grd; ctx.beginPath(); ctx.arc(0,0,r,0,Math.PI*2); ctx.fill(); ctx.restore(); }
+    else { ctx.save(); ctx.translate(p.x*DPR,p.y*DPR); ctx.rotate(p.rot); ctx.fillStyle='rgba(255,40,208,.9)'; ctx.fillRect(-3*DPR,-5*DPR,6*DPR,10*DPR); ctx.restore(); }
+    if(p.life<=0) particles.splice(i,1);
+  }
+}
+
+/* Estado juego */
+let spinsLeft=MAX_SPINS, spinning=false, inJackpot=false;
+const counterEl=document.getElementById('counter'); function updateCounter(){ counterEl.textContent=`Tiradas restantes: ${spinsLeft}` } updateCounter();
+
+function decideOutcome(){ const r=Math.random(); if(r<JACKPOT_PROB) return 'JACKPOT'; if(r<JACKPOT_PROB+WIN_PROB) return 'WIN'; return 'NORMAL'; }
+function pickId(){ return SYMS[(Math.random()*SYMS.length)|0] }
+
+/* Reel strips */
+const stride = SYMS.length * reel.cellH;
+const columns = Array.from({length:COLS}, (_,i)=>({ y: -(Math.random()*stride), target:0, chosen: pickId(), delay:i*120 }));
+
+function spinTo(targetCenter){
+  return new Promise(async resolve=>{
+    const base=1400; const startTime=performance.now();
+    // anticipación leve
+    for(let i=0;i<COLS;i++){ columns[i].y -= 20; }
+    // definir destinos
+    for(let i=0;i<COLS;i++){
+      const chosen = targetCenter ? targetCenter[i] : pickId();
+      columns[i].chosen = chosen;
+      const k = SYMS.indexOf(chosen);
+      const loops = 6 + i;
+      const dest = -(loops*stride + k*reel.cellH + PAYLINE*reel.cellH);
+      columns[i].target = dest;
     }
-    requestAnimationFrame(tick);
+    const cleaners = whoosh(1.8);
+    // animación
+    await new Promise(done=>{
+      function step(now){
+        let allStopped=true;
+        for(let i=0;i<COLS;i++){
+          const col=columns[i]; const t = Math.min(1, Math.max(0, (now - startTime - col.delay)/(base + i*120)));
+          const e = 1 - Math.pow(1-t,3);
+          const y = col.y + (col.target - col.y) * e;
+          col.renderY = y;
+          if(t<1){ allStopped=false; }
+        }
+        if(!allStopped){ requestAnimationFrame(step); }
+        else{
+          // bounce y ticks
+          let idx=0;
+          function bounceOne(){
+            const col=columns[idx];
+            const overshoot = 12;
+            const startY = col.target + overshoot; const endY = col.target;
+            const t0 = performance.now();
+            function bstep(now2){
+              const tt = Math.min(1, (now2 - t0)/140);
+              const e = 1 + (1.70158+1)*Math.pow(tt-1,3) + 1.70158*Math.pow(tt-1,2);
+              col.renderY = startY + (endY - startY)*e;
+              if(tt<1){ requestAnimationFrame(bstep); } else { playTick(idx); idx++; if(idx<COLS) bounceOne(); else { playThunk(); cleaners && cleaners(); done(); } }
+            }
+            requestAnimationFrame(bstep);
+          }
+          bounceOne();
+        }
+      }
+      requestAnimationFrame(step);
+    });
+    resolve();
   });
 }
-const easeOutCubic = t => 1 - Math.pow(1-t,3);
-const easeOutBack = t => { const c1=1.70158, c3=c1+1; return 1 + c3*Math.pow(t-1,3) + c1*Math.pow(t-1,2) };
 
-async function spinTo(targetCenter){
-  const stride = SYM_IDS.length * reelRect.cellH;
-  const base = 1400;
-  const stagger = [0,120,240,360,480];
-  const results = [];
-  const cleaners = whoosh(1.8);
-
-  for(let i=0;i<COLS;i++){
-    const chosen = targetCenter ? targetCenter[i] : pickId();
-    const k = SYM_IDS.indexOf(chosen);
-    const loops = 6 + i;
-    const dest = -(loops*stride + k*reelRect.cellH + PAYLINE*reelRect.cellH);
-    await new Promise(r=>setTimeout(r, stagger[i]));
-    // anticipation: leve temblor previo
-    columns[i].strip.y = columns[i].strip.y || -(Math.random()*stride);
-    const pre = columns[i].strip.y - 20;
-    await animateColumnTo(columns[i], pre, 120, easeOutCubic);
-    // giro principal
-    await animateColumnTo(columns[i], dest+12, base+ i*120, easeOutCubic);
-    // bounce final
-    await animateColumnTo(columns[i], dest, 140, easeOutBack, ()=>{ playTick(i) });
-    if(i===COLS-1){ playThunk(); cleaners && cleaners(); }
-    results.push(chosen);
+/* Dibujo principal */
+function draw(){
+  ctx.setTransform(DPR,0,0,DPR,0,0);
+  ctx.clearRect(0,0,W,H);
+  // bokeh de fondo
+  radial(W*0.2,H*0.25,360,'rgba(255,40,208,.10)');
+  radial(W*0.8,H*0.35,420,'rgba(138,61,255,.10)');
+  // bezel
+  ctx.save();
+  // marco exterior
+  ctx.strokeStyle='#ffd76a'; ctx.lineWidth=6; roundRect(reel.x-14,reel.y-14,reel.w+28,reel.h+28,30); ctx.stroke();
+  // caja interior
+  ctx.globalAlpha=.9; ctx.strokeStyle='rgba(255,255,255,.08)'; ctx.lineWidth=3; roundRect(reel.x,reel.y,reel.w,reel.h,24); ctx.stroke(); ctx.restore();
+  // payline glow
+  for(let i=3;i>=1;i--){ ctx.strokeStyle=`rgba(125,249,255,${.12*i})`; ctx.lineWidth=i+1; line(reel.x+12, reel.y + reel.cellH*PAYLINE + 10, reel.x+reel.w-12, reel.y + reel.cellH*PAYLINE + 10); }
+  // columnas
+  ctx.save(); ctx.beginPath(); roundRect(reel.x,reel.y,reel.w,reel.h,24); ctx.clip();
+  for(let c=0;c<COLS;c++){
+    const col=columns[c];
+    const baseX = reel.x + c*(reel.w/COLS) + 0;
+    const yOffset = col.renderY ?? col.y;
+    // dibujar celdas visibles +/- 1 pantalla
+    const startY = Math.floor((-yOffset - reel.cellH*2)/reel.cellH)*reel.cellH;
+    for(let y=startY; y<(-yOffset + reel.h + reel.cellH*2); y+=reel.cellH){
+      const rowIndex = Math.floor((y/reel.cellH) % SYMS.length); const id = SYMS[(rowIndex+SYMS.length)%SYMS.length];
+      drawSymbol(baseX+8, y + yOffset + reel.y + 10, reel.cellW-16, reel.cellH-8, id);
+    }
   }
-  return results;
+  ctx.restore();
+  // partículas
+  drawParticles();
+  requestAnimationFrame(draw);
 }
+function radial(x,y,r,fill){ ctx.save(); ctx.translate(x*DPR,y*DPR); const g=ctx.createRadialGradient(0,0,0,0,0,r*DPR); g.addColorStop(0,fill); g.addColorStop(1,'rgba(0,0,0,0)'); ctx.fillStyle=g; ctx.beginPath(); ctx.arc(0,0,r*DPR,0,Math.PI*2); ctx.fill(); ctx.restore(); }
+requestAnimationFrame(draw);
 
-/* =========================================================
-   Lógica de juego
-========================================================= */
-const btn = document.getElementById('spin');
-const toggleSound = document.getElementById('sound');
-const modalWin = document.getElementById('win');
-const modalJack = document.getElementById('jack');
-
-function show(m){ m.classList.add('show') }
-function hide(m){ m.classList.remove('show') }
+/* Juego */
+const btn=document.getElementById('spin'); const toggleSound=document.getElementById('sound'); const modalWin=document.getElementById('win'); const modalJack=document.getElementById('jack');
+function show(m){ m.classList.add('show') } function hide(m){ m.classList.remove('show') }
 document.querySelectorAll('[data-close]').forEach(b=> b.addEventListener('click', e=>{ const sel=e.currentTarget.getAttribute('data-close'); const m=document.querySelector(sel); if(m) hide(m) }));
+
 function vibrate(p){ if(navigator.vibrate) navigator.vibrate(p) }
 
 async function doSpin(manual=true){
   if(spinning) return;
-  if(manual){
-    if(spinsLeft<=0) return;
-    ensureAudio();
-    spinsLeft--; updateCounter();
-  }
-  spinning = true;
-  btn.disabled = true;
-
-  let outcome = 'NORMAL';
-  if(manual && !inJackpot) outcome = decideOutcome();
-
+  if(manual){ if(spinsLeft<=0) return; ensureAudio(); spinsLeft--; updateCounter(); }
+  spinning=true; btn.disabled=true;
+  let outcome='NORMAL'; if(manual && !inJackpot) outcome = decideOutcome();
   if(outcome==='JACKPOT' && !inJackpot){
-    inJackpot = true; jingleJack(); show(modalJack); vibrate([80,40,120]); setTimeout(()=>hide(modalJack), 900);
+    inJackpot=true; jingleJack(); show(modalJack); vibrate([80,40,120]); setTimeout(()=>hide(modalJack),900);
     for(let i=1;i<=5;i++){
       let target=null;
-      if(i===5){ const id=pickId(); target = Array(COLS).fill(id) }
-      else { const id=pickId(); const same=2 + (Math.random()*2|0); target = Array(COLS).fill(null).map((_,k)=> k<same? id : pickId()) }
+      if(i===5){ const id=pickId(); target=Array(COLS).fill(id) }
+      else { const id=pickId(); const same=2 + (Math.random()*2|0); target=Array(COLS).fill(null).map((_,k)=> k<same? id : pickId()) }
       await spinTo(target);
       await new Promise(r=>setTimeout(r, 120 + i*70));
     }
     jingleJack(); coinClinks(); show(modalJack); vibrate(220);
     inJackpot=false; spinning=false; btn.disabled = spinsLeft<=0; return;
   }
-
   let target=null; if(outcome==='WIN'){ const id=pickId(); target=Array(COLS).fill(id) }
-  const result = await spinTo(target);
-  if(outcome==='WIN'){ jingleWin(); vibrate([60,40,60]); show(modalWin) }
-
+  await spinTo(target);
+  if(outcome==='WIN'){ jingleWin(); spawnConfetti(reel.x, reel.y, reel.w); vibrate([60,40,60]); show(modalWin); }
   spinning=false; btn.disabled = spinsLeft<=0;
 }
 
-/* UI */
+/* Eventos UI */
 btn.addEventListener('click', ()=>doSpin(true));
 toggleSound.addEventListener('click', ()=>{
-  audioOn = !audioOn;
-  toggleSound.setAttribute('aria-pressed', audioOn?'true':'false');
+  audioOn=!audioOn; toggleSound.setAttribute('aria-pressed', audioOn?'true':'false');
   toggleSound.innerHTML = audioOn? '<span>🔊</span><span>Sonido</span>' : '<span>🔇</span><span>Silencio</span>';
   if(audioOn){ ensureAudio(); tone(880,.08,'triangle',.28) }
 });
+
+/* Utilidad touch: evitar scroll accidental */
+document.addEventListener('touchmove', (e)=>{ if(e.touches.length===1) e.preventDefault() }, {passive:false});
 </script>
 </body>
 </html>
