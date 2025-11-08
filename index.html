@@ -16,7 +16,7 @@
     .btn:active { transform:scale(.98); }
     .btn-primary { background:linear-gradient(135deg, var(--brand), #34d399); color:#0b1220; box-shadow:0 12px 25px rgba(16,185,129,.35); }
 
-    /* Estilo tragamonedas */
+    /* Slot */
     .slot-btn {
       width: 100%; aspect-ratio: 1/1; border-radius: 1rem;
       background: radial-gradient(circle at 30% 30%, #1f2937, #0b1220);
@@ -45,12 +45,29 @@
     .slot-grid { display:grid; grid-template-columns: repeat(5, minmax(0,1fr)); gap: .75rem; }
     .muted { font-size:.9rem; color:#94a3b8; }
 
-    /* Modal "GANASTE" */
+    /* Suspenso */
+    @keyframes suspense {
+      0% { transform: translateY(0) scale(1); filter: brightness(1); }
+      30%{ transform: translateY(-2px) scale(1.02) rotate(-1deg); filter: brightness(1.15); }
+      60%{ transform: translateY(-1px) scale(1.04) rotate(1deg);  filter: brightness(1.05); }
+      100%{ transform: translateY(0) scale(1); filter: brightness(1); }
+    }
+    .is-spinning { animation: suspense .4s ease-in-out infinite; border-color:#34d399; }
+
+    /* Modal */
     .modal-backdrop{ position:fixed; inset:0; background:rgba(0,0,0,.55); display:none; align-items:center; justify-content:center; z-index:50; }
     .modal{ width:min(92vw,520px); border-radius:1.25rem; background:linear-gradient(180deg,#0b1324,#0a1222); border:1px solid rgba(148,163,184,.22); box-shadow: 0 25px 60px rgba(0,0,0,.5); padding:1.25rem; text-align:center; }
-    .modal h2{ font-size: clamp(2rem, 7vw, 3rem); font-weight:900; letter-spacing:.06em; color:#22c55e; text-shadow: 0 0 24px rgba(34,197,94,.25); }
+    .modal h2{ font-size: clamp(2rem, 7vw, 3rem); font-weight:900; letter-spacing:.06em; text-shadow: 0 0 24px rgba(34,197,94,.25); }
     .modal p{ color:#cbd5e1; }
     .modal .close-btn{ margin-top:1rem; background:linear-gradient(135deg,#22c55e,#34d399); color:#0b1220; font-weight:800; border-radius:1rem; padding:.9rem 1.1rem; width:100%; }
+    .modal .close-btn.secondary{ background:linear-gradient(135deg,#64748b,#94a3b8); color:#0b1220; }
+
+    /* Contador */
+    .pill {
+      display:inline-flex; align-items:center; gap:.45rem;
+      background:rgba(16,185,129,.12); border:1px solid rgba(16,185,129,.35);
+      color:#a7f3d0; border-radius:.75rem; padding:.35rem .6rem; font-size:.85rem; font-weight:700;
+    }
   </style>
 </head>
 <body>
@@ -60,10 +77,11 @@
         <img src="https://upload.wikimedia.org/wikipedia/commons/5/57/JAC_Motors_logo.svg" alt="JAC" class="h-10 mx-auto"
              onerror="this.replaceWith(Object.assign(document.createElement('div'),{textContent:'JAC',className:'text-2xl font-extrabold'}));" />
         <h1 class="text-3xl md:text-4xl font-extrabold">🎰 Bono Especial JAC</h1>
-        <p class="muted">Juega: 5 botones, 3 intentos. ¡Mucha suerte! 🏆</p>
+        <p class="muted">Juega: 5 botones, 3 intentos. Solo algunos ganan… ¡suspenso total! 🏆</p>
+        <div class="pill mx-auto justify-center" id="counterWrap">🎁 Bonos restantes: <span id="bonosLeft">—</span> / 100</div>
       </div>
 
-      <!-- Controles superiores -->
+      <!-- Controles -->
       <div class="grid md:grid-cols-3 gap-3 items-end">
         <button id="startBtn" class="btn btn-primary md:col-span-2">Empezar juego</button>
         <div class="text-center md:text-right">
@@ -75,7 +93,7 @@
       <!-- Juego -->
       <div id="gameWrap" class="hidden space-y-3">
         <p id="hint" class="muted">
-          Uno de estos botones te hará ganar el bono máximo. Tienes 3 intentos… ¡MUCHA SUERTE!
+          Uno de estos botones puede darte el bono. Tienes 3 intentos. Cada clic revela si te acercas… o ¡ganas!
         </p>
         <div class="slot-grid">
           <button class="slot-btn"><span class="slot-label">JAC</span></button>
@@ -96,31 +114,74 @@
   <!-- Modal GANASTE -->
   <div id="winModal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="winTitle">
     <div class="modal">
-      <h2 id="winTitle">¡GANASTE! 🎉</h2>
-      <p class="mt-2">Has conseguido el premio máximo. ¡Felicidades!</p>
-      <button id="closeModal" class="close-btn">Cerrar</button>
+      <h2 id="winTitle" class="text-emerald-400">¡GANASTE! 🎉</h2>
+      <p class="mt-2">Has conseguido el bono. ¡Felicidades!</p>
+      <button class="close-btn" data-close="#winModal">Cerrar</button>
+    </div>
+  </div>
+
+  <!-- Modal PERDISTE -->
+  <div id="loseModal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="loseTitle">
+    <div class="modal">
+      <h2 id="loseTitle" class="text-slate-200">Sigue participando 🙌</h2>
+      <p class="mt-2">Hoy no fue, pero todavía puedes intentarlo más tarde.</p>
+      <button class="close-btn secondary" data-close="#loseModal">Entendido</button>
     </div>
   </div>
 
 <script>
 document.addEventListener('DOMContentLoaded', () => {
-  const $ = id => document.getElementById(id);
-  const startBtn = $('startBtn'), gameWrap = $('gameWrap'), triesEl = $('tries');
-  const resultEl = $('result'), hint = $('hint');
+  /* ------------------ Parámetros de juego ------------------ */
+  const WIN_RATE = 0.10;        // 10% de probabilidad de ganar
+  const BONOS_TOTAL = 100;      // stock total (visual/local)
+  const SPIN_DELAY_MS = 1200;   // suspenso antes de revelar
+  const STORAGE_KEYS = {
+    BONOS_LEFT: 'jac_bonos_left_v1',
+    WON_FLAG: 'jac_won_flag_v1' // para evitar múltiples canjes locales
+  };
 
-  // Confetti
-  const canvas = $('confettiCanvas'), ctx = canvas.getContext('2d');
+  /* ------------------ Utilidades DOM ------------------ */
+  const $ = s => document.querySelector(s);
+  const $$ = s => Array.from(document.querySelectorAll(s));
+  const startBtn = $('#startBtn'), gameWrap = $('#gameWrap'), triesEl = $('#tries');
+  const resultEl = $('#result'), hint = $('#hint');
+  const bonosLeftEl = $('#bonosLeft');
+
+  /* ------------------ Audio (Web Audio, sin archivos) ------------------ */
+  let audioCtx;
+  function ensureAudio(){ if(!audioCtx) audioCtx = new (window.AudioContext||window.webkitAudioContext)(); }
+  function tone(freq=440, dur=0.15, type='sine', vol=0.15){
+    ensureAudio();
+    const o=audioCtx.createOscillator(), g=audioCtx.createGain();
+    o.type=type; o.frequency.value=freq;
+    g.gain.value=vol;
+    o.connect(g).connect(audioCtx.destination);
+    o.start();
+    setTimeout(()=>{ g.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime+0.05); }, dur*800);
+    setTimeout(()=>{ o.stop(); }, dur*1000+60);
+  }
+  const sfx = {
+    spinStart(){ tone(880, .12, 'triangle', .12); tone(1320, .12, 'triangle', .08); },
+    spinTick(i){ tone(400+ i*20, .05, 'square', .06); },
+    win(){ tone(523.25,.15,'sine',.18); setTimeout(()=>tone(659.25,.18,'sine',.18),140); setTimeout(()=>tone(783.99,.22,'sine',.18),300); },
+    lose(){ tone(200,.18,'sawtooth',.12); setTimeout(()=>tone(160,.22,'sawtooth',.10),160); }
+  };
+
+  /* ------------------ Confetti ------------------ */
+  const canvas = $('#confettiCanvas'), ctx = canvas.getContext('2d');
   function resizeCanvas(){ canvas.width = innerWidth; canvas.height = innerHeight; }
   addEventListener('resize', resizeCanvas); resizeCanvas();
   let confetti = [];
   function shootConfetti(){
-    confetti = Array.from({length: 140}).map(()=>({
-      x: Math.random()*canvas.width, y: Math.random()*-canvas.height,
-      s: 4+Math.random()*6, v: 2+Math.random()*3, c: `hsl(${Math.random()*360},100%,50%)`, r: Math.random()*360
+    confetti = Array.from({length: 160}).map(() => ({
+      x: Math.random()*canvas.width,
+      y: Math.random()*-canvas.height,
+      s: 4+Math.random()*6, v: 2+Math.random()*3,
+      c: `hsl(${Math.random()*360},100%,50%)`, r: Math.random()*360
     }));
-    animate();
+    animateConfetti();
   }
-  function animate(){
+  function animateConfetti(){
     ctx.clearRect(0,0,canvas.width,canvas.height);
     confetti.forEach(p=>{
       p.y += p.v; p.r += p.v;
@@ -128,58 +189,135 @@ document.addEventListener('DOMContentLoaded', () => {
       ctx.save(); ctx.translate(p.x,p.y); ctx.rotate(p.r*Math.PI/180);
       ctx.fillStyle = p.c; ctx.fillRect(-p.s/2,-p.s/2,p.s,p.s); ctx.restore();
     });
-    if (confetti.length) requestAnimationFrame(animate);
+    if (confetti.length) requestAnimationFrame(animateConfetti);
   }
 
-  // Modal
-  const winModal = $('winModal');
-  const closeModalBtn = $('closeModal');
-  function openModal(){ winModal.style.display='flex'; }
-  function closeModal(){ winModal.style.display='none'; }
-  closeModalBtn.addEventListener('click', closeModal);
-  winModal.addEventListener('click', (e)=>{ if(e.target===winModal) closeModal(); });
-  document.addEventListener('keydown', e=>{ if(e.key==='Escape') closeModal(); });
+  /* ------------------ Modal ------------------ */
+  function openModal(sel){ const m=$(sel); if(m) m.style.display='flex'; }
+  function closeModal(sel){ const m=$(sel); if(m) m.style.display='none'; }
+  $$('[data-close]').forEach(b=>{
+    b.addEventListener('click',()=> closeModal(b.getAttribute('data-close')));
+  });
+  ['#winModal','#loseModal'].forEach(id=>{
+    const el=$(id);
+    el.addEventListener('click', e=>{ if(e.target===el) closeModal(id); });
+  });
+  document.addEventListener('keydown', e=>{
+    if(e.key==='Escape'){ closeModal('#winModal'); closeModal('#loseModal'); }
+  });
 
-  // Juego
-  let triesLeft = 0, clicksMade = 0;
-  const slotButtons = Array.from(document.querySelectorAll('.slot-btn'));
-  slotButtons.forEach(btn=> btn.addEventListener('click', ()=>onPick(btn)));
+  /* ------------------ Bonos restantes (local/visual) ------------------ */
+  function initBonos(){
+    let left = localStorage.getItem(STORAGE_KEYS.BONOS_LEFT);
+    if(left===null){
+      left = String(BONOS_TOTAL);
+      localStorage.setItem(STORAGE_KEYS.BONOS_LEFT, left);
+    }
+    bonosLeftEl.textContent = left;
+  }
+  function bonosLeft(){
+    return parseInt(localStorage.getItem(STORAGE_KEYS.BONOS_LEFT) || `${BONOS_TOTAL}`, 10);
+  }
+  function decBonos(){
+    const left = bonosLeft();
+    const next = Math.max(0, left-1);
+    localStorage.setItem(STORAGE_KEYS.BONOS_LEFT, String(next));
+    bonosLeftEl.textContent = next;
+  }
+
+  // Hooks para backend futuro (global real):
+  async function reportWin(){ /* POST a tu endpoint / firebase */ }
+  async function fetchRemaining(){ /* GET a tu endpoint para actualizar bonosLeftEl */ }
+
+  /* ------------------ Lógica de juego ------------------ */
+  let triesLeft = 0, clicksMade = 0, locked = false;
+
+  const slotButtons = $$('.slot-btn');
+  slotButtons.forEach(btn => btn.addEventListener('click', ()=> onPick(btn)));
 
   function resetGameUI(){
-    triesLeft = 3; clicksMade = 0;
+    triesLeft = 3; clicksMade = 0; locked = false;
     triesEl.textContent = triesLeft;
     resultEl.textContent = '';
     resultEl.classList.add('hidden');
-    slotButtons.forEach(b=> b.disabled = false);
+    slotButtons.forEach(b=>{ b.disabled = false; b.classList.remove('is-spinning'); });
     gameWrap.classList.remove('hidden');
-    hint.textContent = 'Uno de estos botones te hará ganar el bono máximo. Tienes 3 intentos… ¡MUCHA SUERTE!';
+    hint.textContent = 'Uno de estos botones puede darte el bono. Tienes 3 intentos. ¡Suerte!';
   }
 
   startBtn.addEventListener('click', ()=>{
+    ensureAudio();
     resetGameUI();
     gameWrap.scrollIntoView({behavior:'smooth', block:'center'});
   });
 
-  function onPick(btn){
-    if (triesLeft <= 0) return;
-    btn.disabled = true;
-    clicksMade += 1;
-    triesLeft -= 1;
-    triesEl.textContent = triesLeft;
-
-    // Lógica de “siempre ganas” al tercer clic
-    if (clicksMade < 3){
-      resultEl.innerHTML = `😮 ¡Casi! Sigue intentando…`;
-      resultEl.classList.remove('hidden');
-      if (triesLeft === 0){ triesLeft = 1; triesEl.textContent = triesLeft; } // asegura 3 oportunidades reales
-    } else {
-      resultEl.innerHTML = `🎉 <span class="text-emerald-400">¡GANASTE EL BONO MÁXIMO!</span>`;
-      resultEl.classList.remove('hidden');
-      shootConfetti();
-      openModal();
-      slotButtons.forEach(b=> b.disabled = true);
-    }
+  function isWinner(){
+    // No premios si ya no hay bonos
+    if (bonosLeft() <= 0) return false;
+    // Probabilidad base
+    return Math.random() < WIN_RATE;
   }
+
+  async function onPick(btn){
+    if (triesLeft <= 0 || locked) return;
+
+    // Bloqueo temporal para el “suspenso”
+    locked = true;
+    btn.classList.add('is-spinning');
+    btn.disabled = true;
+    sfx.spinStart();
+
+    // ticks de “ruido” durante el suspenso
+    let tickCount = 0;
+    const tickTimer = setInterval(()=> sfx.spinTick(tickCount++), 150);
+
+    setTimeout(async ()=>{
+      clearInterval(tickTimer);
+      btn.classList.remove('is-spinning');
+
+      clicksMade += 1;
+      triesLeft -= 1;
+      triesEl.textContent = Math.max(0, triesLeft);
+
+      if (clicksMade < 3){
+        // Feedback intermedio (sin revelar aún)
+        resultEl.innerHTML = `😮 ¡Casi! Se siente la suerte cerca…`;
+        resultEl.classList.remove('hidden');
+        locked = false;
+        // Si se quedan en 0, dar una última oportunidad (opcional)
+        if (triesLeft === 0){ triesLeft = 1; triesEl.textContent = triesLeft; }
+        return;
+      }
+
+      // Tercer clic: resultado real
+      const youAlreadyWon = localStorage.getItem(STORAGE_KEYS.WON_FLAG) === 'yes';
+      const win = !youAlreadyWon && isWinner();
+
+      if (win){
+        // Marca local, descuenta stock (local/visual), dispara efectos
+        localStorage.setItem(STORAGE_KEYS.WON_FLAG,'yes');
+        decBonos();
+        sfx.win();
+        resultEl.innerHTML = `🎉 <span class="text-emerald-400">¡GANASTE EL BONO!</span>`;
+        resultEl.classList.remove('hidden');
+        shootConfetti();
+        openModal('#winModal');
+        try { await reportWin(); } catch(e){}
+      } else {
+        sfx.lose();
+        resultEl.textContent = `😔 Esta vez no fue tu día. ¡Vuelve a intentarlo más tarde!`;
+        resultEl.classList.remove('hidden');
+        openModal('#loseModal');
+      }
+
+      // Fin de partida
+      slotButtons.forEach(b=> b.disabled = true);
+      locked = false;
+    }, SPIN_DELAY_MS);
+  }
+
+  // Init
+  initBonos();
 });
 </script>
 </body>
