@@ -3,125 +3,51 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no" />
-<title>Tragamonedas JAC</title>
+<title>Tragamonedas JAC — PIXI</title>
+<link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
 <style>
   :root{
-    --bg1:#090012;
-    --bg2:#2a0750;
-    --bg3:#0a031b;
-    --gold:#ffd76a;
-    --gold2:#ffb200;
-    --magenta:#ff28d0;
-    --fuchsia:#ff4ae0;
-    --violet:#8a3dff;
-    --hot:#ff3b7a;
-    --cyan:#7df9ff;
-    --white:#ffffff;
-    --shadow:rgba(0,0,0,.75);
+    --bg1:#090012; --bg2:#2a0750; --bg3:#0a031b;
+    --gold:#ffd76a; --gold2:#ffb200; --cyan:#7df9ff; --magenta:#ff28d0; --violet:#8a3dff; --hot:#ff3b7a;
   }
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-  html,body{margin:0;height:100%;background:radial-gradient(160% 160% at 50% -20%, var(--bg2), var(--bg1) 40%, var(--bg3));color:#eee;font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,'Helvetica Neue',Arial}
+  html,body{margin:0;height:100%;background:radial-gradient(160% 160% at 50% -20%, var(--bg2), var(--bg1) 40%, var(--bg3));color:#eee;font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,'Helvetica Neue',Arial;overflow:hidden}
   body{display:flex}
-
-  /* Ambient bokeh + star dust */
-  .backFX{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden}
-  .bokeh{position:absolute;border-radius:999px;opacity:.12;filter:blur(12px);mix-blend-mode:screen}
-  .bokeh.b1{width:240px;height:240px;left:6%;top:8%;background:radial-gradient(circle at 30% 30%, #fff, var(--magenta) 40%, transparent 70%)}
-  .bokeh.b2{width:320px;height:320px;right:8%;top:16%;background:radial-gradient(circle at 60% 40%, #fff, var(--violet) 40%, transparent 70%)}
-  .bokeh.b3{width:380px;height:380px;left:12%;bottom:10%;background:radial-gradient(circle at 40% 50%, #fff, var(--hot) 40%, transparent 70%)}
-  .stars{position:absolute;inset:0}
-  .stars i{position:absolute;width:2px;height:2px;background:radial-gradient(circle,#fff,transparent);opacity:.55;animation:twinkle 3.3s ease-in-out infinite}
-  @keyframes twinkle{0%,100%{transform:scale(.6);opacity:.35}50%{transform:scale(1.4);opacity:.95}}
-
-  .wrap{position:relative;z-index:1;min-height:100%;width:100%;display:flex;flex-direction:column;gap:10px;align-items:center;justify-content:space-between;padding:10px 12px calc(env(safe-area-inset-bottom,0) + 14px)}
-
-  header{width:100%;display:flex;align-items:center;justify-content:space-between;gap:10px}
+  .wrap{position:relative;z-index:2;min-height:100%;width:100%;display:flex;flex-direction:column;gap:8px;align-items:center;justify-content:space-between;padding:10px 12px calc(env(safe-area-inset-bottom,0) + 14px);pointer-events:none}
+  header{width:100%;display:flex;align-items:center;justify-content:space-between;gap:10px;pointer-events:auto}
   .brand{display:flex;align-items:center;gap:10px}
-  .logo{width:40px;height:40px;border-radius:14px;background:
-    conic-gradient(from 0deg,var(--gold),#fff6b8,var(--gold2),var(--gold));box-shadow:0 0 18px rgba(255,215,106,.6), inset 0 0 12px rgba(0,0,0,.65);display:grid;place-items:center}
+  .logo{width:40px;height:40px;border-radius:14px;background:conic-gradient(from 0deg,var(--gold),#fff6b8,var(--gold2),var(--gold));box-shadow:0 0 18px rgba(255,215,106,.6), inset 0 0 12px rgba(0,0,0,.65);display:grid;place-items:center}
   .logo span{filter:drop-shadow(0 2px 2px rgba(0,0,0,.8));font-size:24px}
   h1{margin:0;font-size:18px;letter-spacing:1px;background:linear-gradient(90deg,#fff,var(--gold));-webkit-background-clip:text;background-clip:text;color:transparent;text-shadow:0 0 16px rgba(255,215,106,.4)}
   .hud{display:flex;align-items:center;gap:8px}
-  .counter{font-weight:800;color:var(--gold);font-size:12px;padding:6px 10px;border-radius:999px;border:1.6px solid rgba(255,215,106,.8);background:rgba(255,215,106,.10);box-shadow:inset 0 0 12px rgba(255,215,106,.18)}
+  .pill{font-weight:800;color:var(--gold);font-size:12px;padding:6px 10px;border-radius:999px;border:1.6px solid rgba(255,215,106,.8);background:rgba(255,215,106,.10);box-shadow:inset 0 0 12px rgba(255,215,106,.18)}
   .toggle{appearance:none;border:1.6px solid rgba(255,215,106,.8);background:rgba(0,0,0,.35);color:#fff;border-radius:999px;padding:6px 10px;font-size:12px;display:flex;align-items:center;gap:6px;cursor:pointer}
-
-  .machine{width:100%;max-width:560px;display:flex;flex-direction:column;gap:10px;align-items:center;margin:6px auto 0}
-  .cabinet{position:relative;width:100%;border-radius:28px;padding:12px;background:linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,.02));box-shadow:0 22px 44px var(--shadow), inset 0 0 140px rgba(0,0,0,.72);border:2px solid rgba(255,255,255,.08)}
-  .frame{position:relative;border-radius:24px;padding:10px;background:radial-gradient(140% 120% at 50% 0%, #221044, #07020f);border:2px solid rgba(255,255,255,.06);box-shadow:inset 0 0 80px rgba(0,0,0,.75);overflow:hidden}
-  .frame::before{content:"";position:absolute;inset:-9px;border-radius:30px;border:3px solid rgba(255,215,106,.65);background:linear-gradient(180deg, rgba(255,215,106,.12), rgba(255,215,106,.03));box-shadow:0 0 28px rgba(255,215,106,.34);z-index:-1}
-
-  /* Reels: fixed height for reliability across devices */
-  .reels{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;height:460px}
-  @media (min-height:820px){ .reels{height:520px} }
-  .reel{position:relative;background:linear-gradient(180deg,#2c1650,#090312 55%,#090312);border-radius:18px;overflow:hidden;border:1.8px solid rgba(255,255,255,.12);box-shadow:inset 0 7px 28px rgba(0,0,0,.8)}
-  .reel::before{content:"";position:absolute;inset:-2px;border-radius:20px;border:2px solid rgba(255,215,106,.26);pointer-events:none}
-  .glare{position:absolute;left:-80%;top:0;width:60%;height:100%;transform:skewX(-18deg);background:linear-gradient(90deg, transparent, rgba(255,255,255,.18), transparent);animation:glare 3.8s ease-in-out infinite;pointer-events:none}
-  @keyframes glare{0%{transform:translateX(-140%) skewX(-18deg);opacity:.0}40%{opacity:.45}60%{transform:translateX(165%) skewX(-18deg);opacity:.0}100%{transform:translateX(165%) skewX(-18deg);opacity:0}}
-
-  .strip{position:absolute;left:0;right:0;top:0;will-change:transform}
-  .cell{height:calc((460px - 20px)/3);display:grid;place-items:center}
-  @media (min-height:820px){ .cell{height:calc((520px - 20px)/3)} }
-
-  /* Motion blur "illusion" layer for extra realism */
-  .sym{width:92%;height:96px;border-radius:18px;position:relative;background:linear-gradient(145deg, rgba(255,255,255,.16), rgba(255,255,255,.05));border:2px solid rgba(255,215,106,.95);box-shadow:0 14px 30px rgba(0,0,0,.85), inset 0 0 20px rgba(255,215,106,.34), 0 0 26px rgba(255,215,106,.28);display:grid;place-items:center;overflow:hidden}
-  .sym::after{content:"";position:absolute;inset:-3px;border-radius:20px;background:conic-gradient(from 60deg, rgba(255,215,106,.0) 0 20%, rgba(255,215,106,.55) 20% 40%, rgba(255,215,106,0) 40% 100%);filter:blur(10px);opacity:.78;pointer-events:none}
-  .blurline{position:absolute;left:-120%;top:50%;height:2px;width:140%;background:linear-gradient(90deg, transparent, rgba(255,255,255,.35), transparent);opacity:0;transform:translateY(-1px);pointer-events:none}
-  .sym.svgwrap{display:grid}
-  .sym svg{width:52px;height:52px;filter:drop-shadow(0 3px 3px rgba(0,0,0,.85))}
-
-  .payline{position:absolute;left:10px;right:10px;top:50%;height:2px;background:linear-gradient(90deg, transparent, var(--cyan), transparent);box-shadow:0 0 14px var(--cyan),0 0 24px rgba(125,249,255,.75);opacity:.6;transform:translateY(-1px);pointer-events:none}
-
-  /* Controls */
-  .controls{display:flex;align-items:center;justify-content:center;margin-top:4px}
-  .btn-spin{--size:106px;width:var(--size);height:var(--size);border-radius:999px;border:none;cursor:pointer;position:relative;display:grid;place-items:center;
-    background:
-      radial-gradient(120% 120% at 50% 0%, #460a8e, #2a0a52 45%, #180634),
-      conic-gradient(from 180deg, rgba(255,255,255,.06), rgba(255,255,255,.02));
+  .controls{display:flex;align-items:center;justify-content:center;margin-top:2px;pointer-events:auto}
+  .btn{--size:110px;width:var(--size);height:var(--size);border-radius:999px;border:none;cursor:pointer;position:relative;display:grid;place-items:center;
+    background:radial-gradient(120% 120% at 50% 0%, #460a8e, #2a0a52 45%, #180634);
     box-shadow:0 26px 40px rgba(0,0,0,.82), inset 0 0 30px rgba(255,215,106,.26), 0 0 30px rgba(250,80,255,.45);
     border:2px solid rgba(255,215,106,.95); color:#fff; font-weight:900; letter-spacing:1px; text-transform:uppercase; font-size:18px}
-  .btn-spin span{position:relative;z-index:2;text-shadow:0 2px 0 rgba(0,0,0,.6),0 0 14px rgba(255,215,106,.55)}
-  .btn-spin::before{content:"";position:absolute;inset:-8px;border-radius:inherit;background:conic-gradient(from 0deg, rgba(255,215,106,.0), rgba(255,215,106,.85), rgba(255,215,106,.0));filter:blur(10px);animation:spinRing 2.2s linear infinite;opacity:.95}
-  .btn-spin::after{content:"";position:absolute;inset:10px;border-radius:inherit;background:radial-gradient(80% 80% at 50% 25%, rgba(255,255,255,.22), rgba(255,255,255,0));opacity:.6;pointer-events:none}
+  .btn span{position:relative;z-index:2;text-shadow:0 2px 0 rgba(0,0,0,.6),0 0 14px rgba(255,215,106,.55)}
+  .btn::before{content:"";position:absolute;inset:-8px;border-radius:inherit;background:conic-gradient(from 0deg, rgba(255,215,106,.0), rgba(255,215,106,.85), rgba(255,215,106,.0));filter:blur(10px);animation:spinRing 2.2s linear infinite;opacity:.95}
+  .btn:active{transform:translateY(1px) scale(.985)}
+  .btn[disabled]{opacity:.55;filter:grayscale(.25);cursor:not-allowed}
   @keyframes spinRing{to{transform:rotate(1turn)}}
-  .btn-spin:active{transform:translateY(1px) scale(.985)}
-  .btn-spin[disabled]{opacity:.55;filter:grayscale(.25);cursor:not-allowed}
 
-  /* Modals */
-  .modal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(5,3,12,.82);backdrop-filter:blur(5px);z-index:50}
+  canvas{position:fixed;inset:0;width:100%;height:100%;z-index:1}
+
+  .modal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(5,3,12,.82);backdrop-filter:blur(5px);z-index:5}
   .modal.show{display:flex}
   .card{min-width:74%;max-width:520px;padding:24px 18px 18px;border-radius:24px;border:2px solid rgba(255,215,106,.98);background:radial-gradient(120% 140% at 50% 0%, rgba(255,255,255,.12), rgba(255,255,255,.05));box-shadow:0 24px 56px rgba(0,0,0,.9), inset 0 0 140px rgba(255,215,106,.18);text-align:center;position:relative;overflow:hidden}
   .card h2{margin:0 0 8px;background:linear-gradient(90deg,var(--gold),#fff,var(--gold));-webkit-background-clip:text;background-clip:text;color:transparent;font-size:30px;letter-spacing:1.6px}
   .card p{margin:0 0 16px;opacity:.96}
-  .card .ok{margin-top:6px;padding:10px 20px;border-radius:999px;border:1.6px solid rgba(255,215,106,.95);background:rgba(0,0,0,.68);color:#fff;font-size:14px;cursor:pointer}
-  .confetti,.coins{position:absolute;inset:0;pointer-events:none;overflow:hidden}
-  .confetti i,.coins i{position:absolute;display:block;will-change:transform;opacity:.98}
-  .confetti i{width:8px;height:12px;background:linear-gradient(180deg,#fff,var(--magenta));border-radius:2px}
-  .coins i{width:16px;height:16px;border-radius:50%;background:radial-gradient(60% 60% at 40% 30%, #fff, var(--gold) 40%, var(--gold2) 65%, #b57b00 90%);box-shadow:0 0 10px rgba(255,215,106,.55)}
+  .ok{margin-top:6px;padding:10px 20px;border-radius:999px;border:1.6px solid rgba(255,215,106,.95);background:rgba(0,0,0,.68);color:#fff;font-size:14px;cursor:pointer}
 
-  /* Orientation lock */
-  .orient{position:fixed;inset:0;background:#070312;color:#eee;display:none;align-items:center;justify-content:center;z-index:70;text-align:center;padding:24px}
+  .orient{position:fixed;inset:0;background:#070312;color:#eee;display:none;align-items:center;justify-content:center;z-index:6;text-align:center;padding:24px}
   .orient.show{display:flex}
-
-  /* Global FX */
-  .flash{position:fixed;inset:0;background:radial-gradient(80% 80% at 50% 50%, rgba(255,255,255,.28), rgba(255,255,255,0));pointer-events:none;opacity:0;transition:opacity .24s ease;z-index:45}
-  .flash.show{opacity:1}
-  .shake{animation:shake .4s ease both}
-  @keyframes shake{0%{transform:translateX(0)}25%{transform:translateX(-4px)}50%{transform:translateX(4px)}75%{transform:translateX(-3px)}100%{transform:translateX(0)}}
-
-  @media (prefers-reduced-motion: reduce){
-    .glare,.btn-spin::before{animation:none}
-    .shake{animation:none}
-  }
 </style>
 </head>
 <body>
-<div class="backFX" aria-hidden="true">
-  <div class="bokeh b1"></div>
-  <div class="bokeh b2"></div>
-  <div class="bokeh b3"></div>
-  <div class="stars" id="stars"></div>
-</div>
-<div class="flash" id="flash"></div>
+<canvas id="stage" aria-label="Máquina tragamonedas"></canvas>
 
 <div class="wrap">
   <header>
@@ -130,41 +56,31 @@
       <h1>Tragamonedas JAC</h1>
     </div>
     <div class="hud">
-      <div id="spinCounter" class="counter" aria-live="polite">Tiradas restantes: 10</div>
-      <button id="soundToggle" class="toggle" aria-pressed="true"><span>🔊</span><span>Sonido</span></button>
+      <div id="counter" class="pill" aria-live="polite">Tiradas restantes: 10</div>
+      <button id="sound" class="toggle" aria-pressed="true"><span>🔊</span><span>Sonido</span></button>
     </div>
   </header>
 
-  <main class="machine" role="region" aria-label="Máquina tragamonedas">
-    <div class="cabinet">
-      <div class="frame">
-        <div class="payline" aria-hidden="true"></div>
-        <div class="reels" id="reels"></div>
-      </div>
-    </div>
-    <div class="controls">
-      <button id="spinBtn" class="btn-spin"><span>Girar</span></button>
-    </div>
-  </main>
+  <div class="controls">
+    <button id="spin" class="btn"><span>Girar</span></button>
+  </div>
 </div>
 
 <!-- PREMIO -->
-<div class="modal" id="modalWin" role="dialog" aria-modal="true" aria-labelledby="mw-title">
+<div class="modal" id="win">
   <div class="card">
-    <div class="confetti" id="confetti"></div>
-    <h2 id="mw-title">¡PREMIO!</h2>
-    <p>¡5 símbolos iguales en la línea central!</p>
-    <button class="ok" data-close="#modalWin">Aceptar</button>
+    <h2>¡PREMIO!</h2>
+    <p>5 símbolos iguales en la línea central.</p>
+    <button class="ok" data-close="#win">Aceptar</button>
   </div>
 </div>
 
 <!-- PREMIO MAYOR -->
-<div class="modal" id="modalJackpot" role="dialog" aria-modal="true" aria-labelledby="mj-title">
+<div class="modal" id="jack">
   <div class="card">
-    <div class="coins" id="coins"></div>
-    <h2 id="mj-title">🎉 ¡PREMIO MAYOR! 🎉</h2>
-    <p>Modo especial: 5 tiradas con suerte aumentada culminando en 5 iguales.</p>
-    <button class="ok" data-close="#modalJackpot">Continuar</button>
+    <h2>🎉 ¡PREMIO MAYOR! 🎉</h2>
+    <p>Se activa el modo especial con 5 tiradas automáticas culminando en 5 iguales.</p>
+    <button class="ok" data-close="#jack">Continuar</button>
   </div>
 </div>
 
@@ -175,280 +91,214 @@
   </div>
 </div>
 
+<!-- PIXI.js CDN -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pixi.js/7.3.3/pixi.min.js" integrity="" crossorigin="anonymous"></script>
 <script>
-/* =====================================================
-   Utilidades de escena
-===================================================== */
-(function stars(){
-  const el=document.getElementById('stars'); const n=70;
-  const rect=el.getBoundingClientRect();
-  for(let i=0;i<n;i++){ const s=document.createElement('i');
-    s.style.left=(Math.random()*rect.width)+'px';
-    s.style.top =(Math.random()*rect.height)+'px';
-    s.style.animationDelay=(Math.random()*3)+'s';
-    el.appendChild(s);
+/* =========================================================
+   Configuración general
+========================================================= */
+const ROWS=3, COLS=5, MAX_SPINS=10, PAYLINE=1;
+const JACKPOT_PROB=0.05, WIN_PROB=0.10;
+const app = new PIXI.Application({ view: document.getElementById('stage'), resizeTo: window, antialias: true, backgroundAlpha: 0 });
+const stage = app.stage;
+
+/* =========================================================
+   Layout
+========================================================= */
+let W=innerWidth, H=innerHeight;
+function layout(){
+  W=innerWidth; H=innerHeight;
+  const isLand = matchMedia('(orientation: landscape)').matches;
+  document.getElementById('orient').classList.toggle('show', isLand);
+}
+addEventListener('resize', layout); addEventListener('orientationchange', layout); layout();
+
+/* =========================================================
+   Símbolos (texturas generadas)
+========================================================= */
+const SYMBOL_IDS = ['sedan','suv','pickup','volante','veloc','llaves','bateria','estrella','bono','test'];
+const textures = {};
+function drawSymbol(id){
+  const g = new PIXI.Graphics();
+  const w=220, h=180;
+  // tarjeta base
+  const grad = new PIXI.Graphics();
+  grad.beginFill(0xffffff, 0.08).drawRoundedRect(0,0,w,h,22).endFill();
+  const border = new PIXI.Graphics();
+  border.lineStyle(4, 0xffd76a, 1).drawRoundedRect(0,0,w,h,22);
+  const bevel = new PIXI.Graphics();
+  bevel.beginFill(0xffd76a, 0.18).drawRoundedRect(6,6,w-12, h-12, 18).endFill();
+  const inner = new PIXI.Container(); inner.addChild(grad, bevel, border);
+
+  // ícono
+  const icon = new PIXI.Graphics();
+  icon.x = w/2; icon.y = h/2;
+  icon.lineStyle(0);
+  const gold = 0xffd76a;
+  switch(id){
+    case 'sedan':
+      icon.lineStyle(5, gold, 1);
+      icon.drawPolygon([-70,20,  70,20,  50,-20,  0,-45, -40,-45, -65,-20]);
+      icon.beginFill(gold).drawCircle(-40,28,12).drawCircle(40,28,12).endFill();
+      break;
+    case 'suv':
+      icon.lineStyle(5, gold, 1);
+      icon.drawPolygon([-72,22,  72,22,  58,-18,  5,-45, -40,-45, -62,-18]);
+      icon.beginFill(gold).drawCircle(-42,30,11).drawCircle(42,30,11).endFill();
+      break;
+    case 'pickup':
+      icon.lineStyle(5, gold, 1);
+      icon.drawPolygon([-75,20, 75,20, 75,-18, 25,-18, 0,-45, -35,-45, -55,-18, -75,-18]);
+      icon.beginFill(gold).drawCircle(-42,30,11).drawCircle(42,30,11).endFill();
+      break;
+    case 'volante':
+      icon.lineStyle(5, gold, 1);
+      icon.drawCircle(0,0,50); icon.beginFill(gold).drawCircle(0,0,20).endFill();
+      icon.lineStyle(4, gold,1).moveTo(-35,0).lineTo(35,0).moveTo(-15,-20).lineTo(-55,-30).moveTo(15,-20).lineTo(55,-30);
+      break;
+    case 'veloc':
+      icon.lineStyle(5, gold, 1);
+      icon.drawCircle(0,10,44);
+      icon.lineStyle(6, gold, 1).moveTo(0,10).lineTo(26,-16);
+      break;
+    case 'llaves':
+      icon.lineStyle(5, gold, 1); icon.drawCircle(-20,-10,22);
+      icon.lineStyle(5, gold, 1).moveTo(0,10).lineTo(60,60).moveTo(60,60).lineTo(74,46).moveTo(74,46).lineTo(86,58);
+      break;
+    case 'bateria':
+      icon.lineStyle(5, gold, 1).drawRoundedRect(-55,-30,110,60,10);
+      icon.beginFill(gold).drawRect(56,-16,8,32).endFill();
+      icon.lineStyle(5, gold, 1).moveTo(0,-26).lineTo(-18,14).moveTo(-18,14).lineTo(6,14).moveTo(6,14).lineTo(-10,44);
+      break;
+    case 'estrella':
+      icon.beginFill(gold,1);
+      icon.drawStar(0,0,5,36,18); icon.endFill();
+      icon.lineStyle(3, gold, .9).drawStar(0,0,5,36,18);
+      break;
+    case 'bono':
+      icon.lineStyle(5, gold, 1).drawRoundedRect(-60,-28,120,56,12);
+      break;
+    case 'test':
+      icon.lineStyle(5, gold, 1).drawRoundedRect(-60,-40,120,80,12);
+      icon.lineStyle(5, gold, 1).moveTo(-40,-5).lineTo(40,-5).moveTo(-40,18).lineTo(10,18);
+      icon.beginFill(gold).drawCircle(42,18,10).endFill();
+      break;
   }
-})();
+  const cont = new PIXI.Container(); cont.addChild(inner); icon.x+=0; icon.y+=5; cont.addChild(icon);
+  const tex = app.renderer.generateTexture(cont, {resolution: window.devicePixelRatio||1});
+  return tex;
+}
 
-/* =====================================================
-   Configuración
-===================================================== */
-const ROWS=3, COLS=5, PAYLINE_INDEX=1, MAX_SPINS=10;
-const JACKPOT_PROB=0.05; // 5%
-const WIN_PROB=0.10;     // 10%
+for(const id of SYMBOL_IDS){ textures[id]=drawSymbol(id); }
 
-/* =====================================================
-   Símbolos SVG - temática agencia
-===================================================== */
-const SYMBOLS=[
-  {id:'sedan', title:'Sedán', svg:`<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
-    <defs><linearGradient id="g1" x1="0" y1="0" x2="48" y2="0"><stop stop-color="#fff"/><stop offset="1" stop-color="#ffd76a"/></linearGradient></defs>
-    <path d="M7 27h34l-2-6-10-5H19l-6 5-6 6z" stroke="url(#g1)" stroke-width="2" fill="rgba(255,255,255,.10)"/>
-    <circle cx="14" cy="29" r="3.8" fill="#ffd76a"/><circle cx="34" cy="29" r="3.8" fill="#ffd76a"/>
-  </svg>`},
-  {id:'suv', title:'SUV', svg:`<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
-    <defs><linearGradient id="g2" x1="0" y1="0" x2="48" y2="0"><stop stop-color="#fff"/><stop offset="1" stop-color="#ffd76a"/></linearGradient></defs>
-    <path d="M8 26h32l-2-7-7-5H18l-6 5-4 7z" stroke="url(#g2)" stroke-width="2" fill="rgba(255,255,255,.10)"/>
-    <circle cx="15" cy="29.5" r="3.6" fill="#ffd76a"/><circle cx="33" cy="29.5" r="3.6" fill="#ffd76a"/>
-  </svg>`},
-  {id:'pickup', title:'Pickup', svg:`<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
-    <defs><linearGradient id="g3" x1="0" y1="0" x2="48" y2="0"><stop stop-color="#fff"/><stop offset="1" stop-color="#ffd76a"/></linearGradient></defs>
-    <path d="M7 26h34v-7h-8l-5-5h-8l-5 5H7v7z" stroke="url(#g3)" stroke-width="2" fill="rgba(255,255,255,.10)"/>
-    <circle cx="15" cy="29.5" r="3.6" fill="#ffd76a"/><circle cx="33" cy="29.5" r="3.6" fill="#ffd76a"/>
-  </svg>`},
-  {id:'volante', title:'Volante', svg:`<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
-    <defs><linearGradient id="g4" x1="0" y1="0" x2="48" y2="0"><stop stop-color="#fff"/><stop offset="1" stop-color="#ffd76a"/></linearGradient></defs>
-    <circle cx="24" cy="24" r="13" stroke="url(#g4)" stroke-width="2"/><circle cx="24" cy="24" r="5.2" fill="#ffd76a"/>
-    <path d="M13 24h22M19 18l-6-2M29 18l6-2" stroke="#ffd76a" stroke-width="2"/>
-  </svg>`},
-  {id:'velocimetro', title:'Velocímetro', svg:`<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
-    <defs><linearGradient id="g5" x1="0" y1="0" x2="48" y2="0"><stop stop-color="#fff"/><stop offset="1" stop-color="#ffd76a"/></linearGradient></defs>
-    <circle cx="24" cy="28" r="12.5" stroke="url(#g5)" stroke-width="2"/>
-    <path d="M24 28l8-8" stroke="#ffd76a" stroke-width="3" stroke-linecap="round"/>
-  </svg>`},
-  {id:'llaves', title:'Llaves', svg:`<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
-    <defs><linearGradient id="g6" x1="0" y1="0" x2="48" y2="0"><stop stop-color="#fff"/><stop offset="1" stop-color="#ffd76a"/></linearGradient></defs>
-    <circle cx="17" cy="20" r="6.5" stroke="url(#g6)" stroke-width="2"/>
-    <path d="M22 24l10 10 2-2 2 2 2-2-2-2 2-2" stroke="#ffd76a" stroke-width="2"/>
-  </svg>`},
-  {id:'bateria', title:'Batería EV', svg:`<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
-    <defs><linearGradient id="g7" x1="0" y1="0" x2="48" y2="0"><stop stop-color="#fff"/><stop offset="1" stop-color="#ffd76a"/></linearGradient></defs>
-    <rect x="10" y="16" width="26" height="18" rx="3" stroke="url(#g7)" stroke-width="2"/>
-    <rect x="36" y="20" width="2" height="10" fill="#ffd76a"/>
-    <path d="M24 18l-4 7h5l-3 7" stroke="#ffd76a" stroke-width="2"/>
-  </svg>`},
-  {id:'estrella', title:'Estrella', svg:`<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
-    <path d="M24 6l4.5 10H40l-9 6.5L34 36l-10-6.5L14 36l3-13.5L8 16h11.5L24 6z" fill="url(#g8)" stroke="#ffd76a" stroke-width="1.8"/>
-    <defs><linearGradient id="g8" x1="0" y1="0" x2="48" y2="0"><stop stop-color="#fff"/><stop offset="1" stop-color="#ffd76a"/></linearGradient></defs>
-  </svg>`},
-  {id:'bono', title:'Bono', svg:`<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
-    <rect x="10" y="16" width="28" height="16" rx="4" stroke="url(#g9)" stroke-width="2" fill="rgba(255,255,255,.10)"/>
-    <text x="24" y="27" text-anchor="middle" fill="#ffd76a" font-size="10" font-weight="700">BONO</text>
-    <defs><linearGradient id="g9" x1="0" y1="0" x2="48" y2="0"><stop stop-color="#fff"/><stop offset="1" stop-color="#ffd76a"/></linearGradient></defs>
-  </svg>`},
-  {id:'test', title:'Test Drive', svg:`<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
-    <rect x="12" y="14" width="24" height="20" rx="4" stroke="url(#g10)" stroke-width="2"/>
-    <path d="M16 22h16M16 27h10" stroke="#ffd76a" stroke-width="2"/>
-    <circle cx="33" cy="27" r="3.4" fill="#ffd76a"/>
-    <defs><linearGradient id="g10" x1="0" y1="0" x2="48" y2="0"><stop stop-color="#fff"/><stop offset="1" stop-color="#ffd76a"/></linearGradient></defs>
-  </svg>`},
-];
-const stripOrder = SYMBOLS.map(s=>s.id);
+/* =========================================================
+   Reels
+========================================================= */
+const viewport = new PIXI.Container();
+stage.addChild(viewport);
 
-/* =====================================================
-   Estado & refs
-===================================================== */
-let spinsLeft=MAX_SPINS, spinning=false, inJackpot=false;
-const reelsEl=document.getElementById('reels');
-const spinBtn=document.getElementById('spinBtn');
-const spinCounter=document.getElementById('spinCounter');
-const soundToggle=document.getElementById('soundToggle');
-const modalWin=document.getElementById('modalWin');
-const modalJack=document.getElementById('modalJackpot');
-const flashEl=document.getElementById('flash');
-const orientEl=document.getElementById('orient');
+let reelArea = { x:0, y:0, w:0, h:0, cellH:0 };
+function sizeReels(){
+  const w = Math.min(560, W*0.92);
+  const h = Math.min(520, H*0.62);
+  reelArea = { x:(W-w)/2, y:(H-h)/2-20, w:w, h:h, cellH: (h-20)/3 };
+}
+sizeReels();
 
-/* =====================================================
-   Construcción de carretes
-===================================================== */
-function buildReels(){
-  reelsEl.innerHTML='';
+const reels = []; // {container,strips:[sprites], y}
+function buildStrips(){
+  viewport.removeChildren();
+  reels.length = 0;
   for(let c=0;c<COLS;c++){
-    const reel=document.createElement('div'); reel.className='reel';
-    const glare=document.createElement('div'); glare.className='glare'; reel.appendChild(glare);
-    const strip=document.createElement('div'); strip.className='strip';
-    const repeats=9; // tira larga para ilusión de inercia
+    const col = new PIXI.Container();
+    col.x = reelArea.x + c*(reelArea.w/cols) + (c*10) - 0;
+    col.y = reelArea.y + 10;
+    viewport.addChild(col);
+
+    // vertical strip: repeat many rows to simulate inertia
+    const strip = new PIXI.Container();
+    col.addChild(strip);
+    const perRow = SYMBOL_IDS.length;
+    const repeats = 10;
+    let y=0;
     for(let r=0;r<repeats;r++){
-      for(const id of stripOrder){
-        const sym=SYMBOLS.find(s=>s.id===id);
-        const cell=document.createElement('div'); cell.className='cell'; cell.dataset.symbol=id;
-        cell.innerHTML=`<div class="sym svgwrap" aria-label="${sym.title}">
-            <div class="blurline"></div>${sym.svg}
-          </div>`;
-        strip.appendChild(cell);
+      for(const id of SYMBOL_IDS){
+        const sp = new PIXI.Sprite(textures[id]);
+        sp.anchor.set(0.5);
+        sp.x = (reelArea.w/COLS)/2;
+        sp.y = y + reelArea.cellH/2;
+        sp.scale.set(Math.min((reelArea.cellH-10)/180, (reelArea.w/COLS-10)/220));
+        strip.addChild(sp);
+        y += reelArea.cellH;
       }
     }
-    reel.appendChild(strip); reelsEl.appendChild(reel);
+    reels.push({col, strip, y:0});
   }
 }
-buildReels();
+const cols = COLS;
+buildStrips();
 
-function getCellHeight(){ const s=document.querySelector('.cell'); return s? s.getBoundingClientRect().height : 100 }
-
-/* =====================================================
-   Orientación vertical
-===================================================== */
-function checkOrientation(){ const isLandscape=matchMedia('(orientation: landscape)').matches; orientEl.classList.toggle('show', isLandscape) }
-addEventListener('resize',checkOrientation);
-addEventListener('orientationchange',checkOrientation);
-checkOrientation();
-
-/* =====================================================
-   WebAudio Realista
-===================================================== */
-let audioOn=true, ctx=null, master=null;
-function ensureAudio(){ if(ctx) return; const AC=window.AudioContext||window.webkitAudioContext; if(!AC) return; ctx=new AC(); master=ctx.createGain(); master.gain.value=0.9; master.connect(ctx.destination) }
-
-function osc({f=440,d=.1,type='sine',v=.22}){
-  if(!audioOn) return;
-  ensureAudio(); if(!ctx) return;
-  const o=ctx.createOscillator(), g=ctx.createGain();
-  o.type=type; o.frequency.value=f; g.gain.value=v;
-  o.connect(g).connect(master);
-  const t=ctx.currentTime;
-  g.gain.setValueAtTime(0,t);
-  g.gain.linearRampToValueAtTime(v,t+.01);
-  g.gain.exponentialRampToValueAtTime(0.0001,t+d);
-  o.start(t); o.stop(t+d+.02);
+/* Payline marker (glow line) */
+const payline = new PIXI.Graphics();
+function drawPayline(){
+  payline.clear();
+  payline.lineStyle(3, 0x7df9ff, 0.8);
+  payline.moveTo(reelArea.x+10, reelArea.y + reelArea.cellH*PAYLINE + 10);
+  payline.lineTo(reelArea.x+reelArea.w-10, reelArea.y + reelArea.cellH*PAYLINE + 10);
+  stage.addChild(payline);
 }
+drawPayline();
 
-function whoosh(d=1.7){
-  if(!audioOn) return ()=>{};
-  ensureAudio(); if(!ctx) return ()=>{};
-  const len=Math.floor(ctx.sampleRate*d);
-  const buf=ctx.createBuffer(1,len,ctx.sampleRate);
-  const ch=buf.getChannelData(0);
-  for(let i=0;i<len;i++){ const t=i/len; ch[i]=(Math.random()*2-1)*(1-t) } // fade out
-  const src=ctx.createBufferSource(); src.buffer=buf;
-  const bp=ctx.createBiquadFilter(); bp.type='bandpass'; bp.frequency.value=1700; bp.Q.value=0.9;
-  const g=ctx.createGain(); g.gain.value=.18;
-  src.connect(bp).connect(g).connect(master);
-  src.start();
-  return ()=>{ try{src.stop()}catch(e){} };
+/* Mask to clip reels */
+const mask = new PIXI.Graphics();
+function drawMask(){
+  mask.clear();
+  mask.beginFill(0xffffff,1).drawRoundedRect(reelArea.x, reelArea.y, reelArea.w, reelArea.h, 24).endFill();
+  viewport.mask = mask; stage.addChild(mask);
 }
+drawMask();
 
-function tick(i){ osc({f:260+i*60,d:.05,type:'square',v:.14}) }
-function thunk(){ osc({f:110,d:.08,type:'triangle',v:.24}) }
-function jingleWin(){ [880,1175,1760].forEach((f,i)=>setTimeout(()=>osc({f,d:.14,type:'triangle',v:.28}),i*120)) }
-function jingleJack(){ [660,880,1320,1760,1320,880,660].forEach((f,i)=>setTimeout(()=>osc({f,d:.16,type:'square',v:.3}),i*140)) }
-function coinClinks(){ for(let i=0;i<6;i++) setTimeout(()=>osc({f:1400+Math.random()*700,d:.06,type:'square',v:.16}),80*i) }
+/* =========================================================
+   Spin system
+========================================================= */
+let spinsLeft = MAX_SPINS;
+let spinning = false;
+let inJackpot = false;
 
-/* =====================================================
-   FX Visuales
-===================================================== */
-function flash(){ flashEl.classList.add('show'); setTimeout(()=>flashEl.classList.remove('show'), 220) }
-function vibrate(p){ if(navigator.vibrate) navigator.vibrate(p) }
-function confettiBurst(parent,n=80,d=1600){
-  parent.innerHTML='';
-  const rect=parent.getBoundingClientRect();
-  for(let i=0;i<n;i++){
-    const el=document.createElement('i');
-    el.style.left=(Math.random()*rect.width)+'px';
-    el.style.top=(-40 - Math.random()*80)+'px';
-    parent.appendChild(el);
-    const dx=(Math.random()*80-40);
-    const dy=rect.height + 80 + Math.random()*80;
-    const rot=(Math.random()*720-360);
-    const t0=performance.now();
-    const dur=d + Math.random()*600;
-    (function anim(ts){
-      const p=Math.min(1,(ts-t0)/dur);
-      el.style.transform=`translate(${dx*p}px,${dy*p}px) rotate(${rot*p}deg)`;
-      if(p<1) requestAnimationFrame(anim); else el.remove();
-    })(t0);
-  }
-}
-function coinRain(parent,n=80,d=1800){
-  parent.innerHTML='';
-  const rect=parent.getBoundingClientRect();
-  for(let i=0;i<n;i++){
-    const el=document.createElement('i');
-    el.style.left=(Math.random()*rect.width)+'px';
-    el.style.top=(-40 - Math.random()*80)+'px';
-    parent.appendChild(el);
-    const dx=(Math.random()*120-60);
-    const dy=rect.height + 80 + Math.random()*80;
-    const rot=(Math.random()*720-360);
-    const t0=performance.now();
-    const dur=d + Math.random()*600;
-    (function anim(ts){
-      const p=Math.min(1,(ts-t0)/dur);
-      el.style.transform=`translate(${dx*p}px,${dy*p}px) rotate(${rot*p}deg)`;
-      if(p<1) requestAnimationFrame(anim); else el.remove();
-    })(t0);
-  }
-}
+function updateCounter(){ document.getElementById('counter').textContent = `Tiradas restantes: ${spinsLeft}`; }
+updateCounter();
 
-/* =====================================================
-   Modales
-===================================================== */
-function showModal(m){ m.classList.add('show') }
-function hideModal(m){ m.classList.remove('show') }
-document.querySelectorAll('[data-close]').forEach(btn=> btn.addEventListener('click', e=>{
-  const sel=e.currentTarget.getAttribute('data-close');
-  const m=document.querySelector(sel); if(m) hideModal(m);
-}));
-
-/* =====================================================
-   Probabilidades & helpers
-===================================================== */
-function decideOutcome(){
-  const r=Math.random();
-  if(r<JACKPOT_PROB) return 'JACKPOT';
-  if(r<JACKPOT_PROB + WIN_PROB) return 'WIN';
+function decide(){
+  const r = Math.random();
+  if(r < JACKPOT_PROB) return 'JACKPOT';
+  if(r < JACKPOT_PROB + WIN_PROB) return 'WIN';
   return 'NORMAL';
 }
-function pickId(){ return SYMBOLS[Math.floor(Math.random()*SYMBOLS.length)].id; }
+function pickId(){ return SYMBOL_IDS[(Math.random()*SYMBOL_IDS.length)|0]; }
 
-/* =====================================================
-   Animación de giro (con "blurline" para sensación de velocidad)
-===================================================== */
-function spinReels(targetCenter){
-  return new Promise(resolve=>{
-    const stopWhoosh=whoosh(1.8);
-    const reels=[...document.querySelectorAll('.reel')];
-    const h=getCellHeight();
-    const stride=SYMBOLS.length*h;
-    const base=1680;
-    const delays=[0,110,220,330,440];
-    const start=performance.now();
-
-    reels.forEach((reel,idx)=>{
-      const strip=reel.querySelector('.strip');
-      const initial=-(Math.random()*stride);
-      strip.style.transform=`translate3d(0,${initial}px,0)`;
-      const loops=6+idx;
-      const chosen=targetCenter? targetCenter[idx] : pickId();
-      const k=stripOrder.indexOf(chosen);
-      const dest=-(loops*stride + k*h + PAYLINE_INDEX*h);
-      const dur=base+delays[idx];
-      const ease=t=>1 - Math.pow(1-t,3);
-
-      // motion blur bar sweep
-      const blurs = strip.querySelectorAll('.blurline');
-      blurs.forEach(b=>{ b.style.opacity=.0 });
+function spinTo(targetCenter){ // targetCenter: array of 5 ids or null
+  return new Promise(res=>{
+    const base=1400, delays=[0,120,240,360,480];
+    const start = performance.now();
+    const stride = SYMBOL_IDS.length * reelArea.cellH;
+    reels.forEach((R,idx)=>{
+      const ini = - (Math.random()*stride);
+      R.strip.y = ini;
+      const loops = 6 + idx;
+      const chosen = targetCenter ? targetCenter[idx] : pickId();
+      const k = SYMBOL_IDS.indexOf(chosen);
+      const dest = -(loops*stride + k*reelArea.cellH + PAYLINE*reelArea.cellH);
+      const dur = base + delays[idx];
+      const ease = t => 1 - Math.pow(1-t,3);
 
       function frame(ts){
-        const t=Math.min(1,(ts-start)/dur);
-        const y=initial + (dest-initial)*ease(t);
-        strip.style.transform=`translate3d(0,${y}px,0)`;
-        const blurAlpha = (t>.08 && t<.9) ? .22 : 0;
-        blurs.forEach(b=>{ b.style.opacity=blurAlpha });
+        const t = Math.min(1, (ts-start)/dur);
+        const y = ini + (dest-ini)*ease(t);
+        R.strip.y = y;
         if(t<1){ requestAnimationFrame(frame) }
-        else {
-          tick(idx);
-          blurs.forEach(b=>{ b.style.opacity=0 });
-          if(idx===reels.length-1){ thunk(); stopWhoosh && stopWhoosh(); resolve(); }
+        else{
+          playTick(idx);
+          if(idx===reels.length-1){ playThunk(); res(); }
         }
       }
       requestAnimationFrame(frame);
@@ -456,72 +306,134 @@ function spinReels(targetCenter){
   });
 }
 
-/* =====================================================
-   Juego principal
-===================================================== */
-function updateCounter(){ spinCounter.textContent=`Tiradas restantes: ${spinsLeft}`; }
+/* =========================================================
+   Audio (WebAudio)
+========================================================= */
+let audioOn = true, AC = null, master = null;
+function ensureAudio(){
+  if(AC) return;
+  const C = window.AudioContext || window.webkitAudioContext;
+  if(!C) return;
+  AC = new C();
+  master = AC.createGain();
+  master.gain.value = 0.9;
+  master.connect(AC.destination);
+}
+function tone(f=440,d=.1,type='sine',v=.2){
+  if(!audioOn) return;
+  ensureAudio(); if(!AC) return;
+  const o=AC.createOscillator(), g=AC.createGain();
+  o.type=type; o.frequency.value=f; g.gain.value=v;
+  o.connect(g).connect(master);
+  const t=AC.currentTime;
+  g.gain.setValueAtTime(0,t);
+  g.gain.linearRampToValueAtTime(v,t+.01);
+  g.gain.exponentialRampToValueAtTime(0.0001,t+d);
+  o.start(t); o.stop(t+d+.02);
+}
+function whoosh(d=1.7){
+  if(!audioOn) return ()=>{};
+  ensureAudio(); if(!AC) return ()=>{};
+  const len=Math.floor(AC.sampleRate*d);
+  const buf=AC.createBuffer(1,len,AC.sampleRate);
+  const ch=buf.getChannelData(0);
+  for(let i=0;i<len;i++){ const t=i/len; ch[i]=(Math.random()*2-1)*(1-t) }
+  const src=AC.createBufferSource(); src.buffer=buf;
+  const bp=AC.createBiquadFilter(); bp.type='bandpass'; bp.frequency.value=1700; bp.Q.value=0.9;
+  const g=AC.createGain(); g.gain.value=.18;
+  src.connect(bp).connect(g).connect(master);
+  src.start();
+  return ()=>{ try{src.stop()}catch(e){} };
+}
+function playTick(i){ tone(260+i*60,.05,'square',.14) }
+function playThunk(){ tone(110,.08,'triangle',.24) }
+function jingleWin(){ [880,1175,1760].forEach((f,i)=>setTimeout(()=>tone(f,.14,'triangle',.28),i*120)) }
+function jingleJack(){ [660,880,1320,1760,1320,880,660].forEach((f,i)=>setTimeout(()=>tone(f,.16,'square',.30),i*140)) }
+function coinClinks(){ for(let i=0;i<6;i++) setTimeout(()=>tone(1400+Math.random()*700,.06,'square',.16),80*i) }
 
-async function spin(manual=true){
+/* =========================================================
+   UX: modals, vibración, overlays
+========================================================= */
+const btn = document.getElementById('spin');
+const toggleSound = document.getElementById('sound');
+const modalWin = document.getElementById('win');
+const modalJack = document.getElementById('jack');
+
+function show(m){ m.classList.add('show') }
+function hide(m){ m.classList.remove('show') }
+document.querySelectorAll('[data-close]').forEach(b=> b.addEventListener('click', e=>{
+  const sel=e.currentTarget.getAttribute('data-close'); const m=document.querySelector(sel); if(m) hide(m);
+}));
+
+function vibrate(p){ if(navigator.vibrate) navigator.vibrate(p) }
+
+/* =========================================================
+   Lógica de juego
+========================================================= */
+async function doSpin(manual=true){
   if(spinning) return;
-  if(manual && spinsLeft<=0) return;
-  if(manual && !ctx && audioOn) ensureAudio();
+  if(manual){
+    if(spinsLeft<=0) return;
+    ensureAudio();
+    spinsLeft--; updateCounter();
+  }
+  spinning = true;
+  btn.disabled = true;
+  const stopWhoosh = whoosh(1.8);
 
-  spinning=true; spinBtn.disabled=true;
-  if(manual && !inJackpot){ spinsLeft--; updateCounter(); }
-
-  let outcome='NORMAL';
-  if(manual && !inJackpot) outcome=decideOutcome();
+  let outcome = 'NORMAL';
+  if(manual && !inJackpot){
+    const d = decide();
+    outcome = d;
+  }
 
   if(outcome==='JACKPOT' && !inJackpot){
-    inJackpot=true;
-    jingleJack(); coinRain(document.getElementById('coins'));
-    showModal(modalJack); if(navigator.vibrate) vibrate([80,40,120]);
-    setTimeout(()=>hideModal(modalJack), 900);
+    inJackpot = true;
+    jingleJack(); show(modalJack); vibrate([80,40,120]);
+    setTimeout(()=>hide(modalJack), 900);
 
-    // 5 auto-tiradas: 1-4 con 2–3 matches, 5 garantizada 5 iguales
+    // 5 auto tiradas
     for(let i=1;i<=5;i++){
-      document.querySelector('.cabinet').classList.add('shake');
-      setTimeout(()=>document.querySelector('.cabinet').classList.remove('shake'), 420);
-      flash();
-      let target;
+      let target=null;
       if(i===5){
-        const id=pickId();
-        target=Array(COLS).fill(id);
+        const sym = pickId();
+        target = Array(COLS).fill(sym);
       }else{
-        const id=pickId();
-        const same=2 + Math.floor(Math.random()*2);
-        target=Array(COLS).fill(null).map((_,k)=> k<same? id : pickId());
+        const sym = pickId();
+        const same = 2 + Math.floor(Math.random()*2);
+        target = Array(COLS).fill(null).map((_,k)=> k<same? sym : pickId());
       }
-      await spinReels(target);
+      await spinTo(target);
       await new Promise(r=>setTimeout(r, 120 + i*70));
     }
-    jingleJack(); coinClinks(); flash(); coinRain(document.getElementById('coins')); showModal(modalJack); if(navigator.vibrate) vibrate(220);
-    inJackpot=false; spinning=false; spinBtn.disabled = spinsLeft<=0; return;
+    jingleJack(); coinClinks(); show(modalJack); vibrate(220);
+    inJackpot=false; spinning=false; btn.disabled = spinsLeft<=0; if(stopWhoosh) stopWhoosh(); return;
   }
 
-  // PREMIO normal (10%) -> fuerza 5 iguales en la línea central
   let target=null;
-  if(outcome==='WIN'){ const id=pickId(); target=Array(COLS).fill(id); }
-  await spinReels(target);
   if(outcome==='WIN'){
-    jingleWin(); flash(); confettiBurst(document.getElementById('confetti')); if(navigator.vibrate) vibrate([60,40,60]);
-    showModal(modalWin);
+    const sym = pickId();
+    target = Array(COLS).fill(sym);
   }
+  await spinTo(target);
+  if(stopWhoosh) stopWhoosh();
 
-  spinning=false; spinBtn.disabled = spinsLeft<=0;
+  if(outcome==='WIN'){ jingleWin(); vibrate([60,40,60]); show(modalWin); }
+
+  spinning=false; btn.disabled = spinsLeft<=0;
 }
 
-/* =====================================================
-   Eventos
-===================================================== */
-spinBtn.addEventListener('click', ()=>spin(true));
-soundToggle.addEventListener('click', ()=>{
-  audioOn=!audioOn; soundToggle.setAttribute('aria-pressed', audioOn?'true':'false');
-  soundToggle.innerHTML = audioOn? '<span>🔊</span><span>Sonido</span>' : '<span>🔇</span><span>Silencio</span>';
-  if(audioOn){ ensureAudio(); osc({f:880,d:.08,type:'triangle',v:.26}); }
+/* =========================================================
+   Eventos UI
+========================================================= */
+btn.addEventListener('click', ()=>doSpin(true));
+toggleSound.addEventListener('click', ()=>{
+  audioOn = !audioOn;
+  toggleSound.setAttribute('aria-pressed', audioOn?'true':'false');
+  toggleSound.innerHTML = audioOn? '<span>🔊</span><span>Sonido</span>' : '<span>🔇</span><span>Silencio</span>';
+  if(audioOn){ ensureAudio(); tone(880,.08,'triangle',.26); }
 });
 
-updateCounter();
 </script>
 </body>
 </html>
