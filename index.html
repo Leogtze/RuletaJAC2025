@@ -1,361 +1,642 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Tragamonedas JAC — 10 Tiradas</title>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no" />
+<title>Tragamonedas Agencia</title>
 <style>
-:root{
-  --bg1:#140428; --bg2:#2f0a5a; --bg3:#4b0d83; --bg4:#7a1fd0;
-  --fx-pink:#ff42c1; --fx-violet:#a86bff;
-  --gold1:#ffeaa8; --gold2:#f6cf61; --gold3:#d79a1a; --gold4:#8b5c00; --gold-hi:#fff7d9;
-  --text:#fff; --muted:#dacfff; --radius:20px; --gap:12px;
-  --cell:clamp(68px, 15vw, 130px);
-  --spin-ms-1:3500; --spin-step:180;
-}
-*{box-sizing:border-box} html,body{height:100%}
-body{
-  margin:0; color:var(--text);
-  font-family: system-ui, -apple-system, "Segoe UI", Roboto, Ubuntu, "Noto Sans", "Helvetica Neue", Arial, sans-serif;
-  background:
-    radial-gradient(1100px 600px at 80% -10%, rgba(255,255,255,.08), transparent 60%),
-    radial-gradient(900px 500px at 15% 5%, rgba(255,120,255,.10), transparent 70%),
-    linear-gradient(180deg, var(--bg4) 0%, var(--bg1) 86%);
-  overflow-x:hidden;
-}
-.bg{position:fixed; inset:0; pointer-events:none; z-index:0;
-  background-image:
-    radial-gradient(48px 48px at 10% 20%, rgba(255,255,255,.09), transparent 60%),
-    radial-gradient(80px 80px at 35% 15%, rgba(255,255,255,.05), transparent 60%),
-    radial-gradient(70px 70px at 70% 28%, rgba(255,255,255,.06), transparent 60%),
-    radial-gradient(60px 60px at 85% 70%, rgba(255,255,255,.05), transparent 60%),
-    radial-gradient(60px 60px at 50% 80%, rgba(255,255,255,.05), transparent 60%);
-  opacity:.9; filter:saturate(115%);
-}
-.app{min-height:100%; display:flex; align-items:center; justify-content:center; padding:16px}
-.wrapper{width:min(1180px, 96vw); display:grid; gap:14px; grid-template-rows:auto auto 1fr auto}
-.top{display:grid; gap:10px; align-items:center; grid-template-columns:1fr auto 1fr}
-.brand{
-  justify-self:start; font-weight:1000; letter-spacing:.08em; text-transform:uppercase;
-  font-size:clamp(18px,3.2vmin,28px);
-  background:linear-gradient(180deg, var(--gold1), var(--gold2) 45%, var(--gold3));
-  -webkit-background-clip:text; background-clip:text; color:transparent;
-  text-shadow:0 1px 0 var(--gold4), 0 2px 10px rgba(255,220,120,.45);
-}
-.stats{display:flex; gap:10px; justify-content:center; flex-wrap:wrap}
-.pill{
-  background:
-    radial-gradient(160% 120% at 50% -60%, rgba(255,255,255,.2), rgba(255,255,255,.04) 60%, transparent),
-    linear-gradient(180deg,#3a1d63,#1a0d2c);
-  border:1px solid rgba(255,255,255,.14);
-  border-radius:14px; padding:10px 14px; min-width:160px;
-  box-shadow:0 10px 30px rgba(0,0,0,.45);
-}
-.pill b{display:block; font-size:12px; color:var(--muted); letter-spacing:.06em}
-.pill span{font-weight:900; font-size:clamp(18px,2.7vmin,22px)}
-.actions{display:flex; gap:10px; justify-self:end; align-items:center}
-.btn{
-  appearance:none; border:none; cursor:pointer; position:relative; overflow:hidden;
-  font-weight:1000; letter-spacing:.08em; text-transform:uppercase;
-  padding:12px 18px; border-radius:14px;
-  color:#2b0a1f;
-  background:linear-gradient(180deg, var(--gold1), var(--gold2) 55%, var(--gold3));
-  box-shadow:0 6px 0 var(--gold4), 0 0 24px rgba(255, 120, 255, .25);
-}
-.btn:before{content:""; position:absolute; inset:0; background:linear-gradient(90deg, transparent, rgba(255,255,255,.35) 40%, rgba(255,255,255,.12) 60%, transparent); transform:translateX(-120%)}
-.btn:hover:before{animation:shine 1200ms ease} @keyframes shine{to{transform:translateX(120%)}}
-.btn:disabled{opacity:.6; cursor:not-allowed; box-shadow:0 6px 0 #7d5a1a}
-.btn.neon{color:#fff; background:linear-gradient(180deg,#ff48c9,#7a1fd0); border:1px solid rgba(255,255,255,.18); box-shadow:0 6px 0 #3a0a67, 0 0 22px rgba(168,107,255,.55)}
-.machine{
-  position:relative; padding: clamp(10px, 1.8vmin, 16px); border-radius: var(--radius);
-  background: linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,0)), linear-gradient(180deg,#2c0a52,#140428 78%);
-  box-shadow:0 14px 40px rgba(0,0,0,.55); border:3px solid transparent; background-clip:padding-box, border-box;
-}
-.machine:before{
-  content:""; position:absolute; inset:-3px; border-radius:calc(var(--radius) + 3px);
-  padding:3px; background:conic-gradient(from 0deg, var(--gold3), var(--gold2), var(--gold1), var(--gold2), var(--gold3));
-  -webkit-mask:linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite:xor; mask-composite:exclude;
-  animation:borderHue 6s linear infinite; box-shadow:inset 0 0 24px rgba(255,230,160,.55), 0 0 30px rgba(255,120,255,.2);
-}
-@keyframes borderHue{to{filter:hue-rotate(360deg)}}
-.grid{
-  position:relative; z-index:2; display:grid; gap:var(--gap);
-  grid-template-columns:repeat(5,var(--cell)); grid-auto-rows:var(--cell);
-  justify-content:center; padding: clamp(8px,1.6vmin,12px);
-  background: radial-gradient(120% 180% at 50% -20%, rgba(255,255,255,.06), transparent 60%), linear-gradient(180deg,#23063e,#120223);
-  border-radius:14px; box-shadow: inset 0 10px 40px rgba(0,0,0,.6); overflow:hidden;
-}
-.reel{position:relative; overflow:hidden; border-radius:14px; background:linear-gradient(180deg,#140428,#0a0316); border:1px solid rgba(255,255,255,.08)}
-.strip{position:absolute; left:0; right:0; top:0; will-change:transform}
-.cell{width:100%; height:var(--cell); display:flex; align-items:center; justify-content:center}
-.symbol{width:78%; height:78%; filter:drop-shadow(0 2px 0 rgba(0,0,0,.5)) drop-shadow(0 10px 16px rgba(0,0,0,.45))}
-.spinning .strip{filter:url(#motion-blur)}
-.win{outline:4px solid var(--gold1); box-shadow:0 0 0 3px rgba(255,255,255,.15) inset, 0 0 22px 6px rgba(255,220,120,.7); border-radius:12px; animation:winPulse .9s ease-in-out 2}
-@keyframes winPulse{0%{transform:scale(1)}50%{transform:scale(1.03)}100%{transform:scale(1)}}
-.reel.stop .strip{animation:bounce 220ms cubic-bezier(.2,.9,.25,1.2)}
-@keyframes bounce{0%{transform:translateY(var(--endY))}50%{transform:translateY(calc(var(--endY) + 6px))}100%{transform:translateY(var(--endY))}}
-.controls{display:flex; gap:12px; justify-content:center; align-items:center; flex-wrap:wrap}
-.status{min-height:1.5em; text-align:center; font-weight:800; text-shadow:0 2px 0 #16062b, 0 0 18px rgba(255,180,255,.35)}
-.small{opacity:.8; font-size:12px}
-.coins{pointer-events:none; position:absolute; inset:0; overflow:hidden; z-index:5}
-.coin{position:absolute; top:-40px; width:24px; height:24px; border-radius:50%; background: radial-gradient(circle at 30% 30%, var(--gold-hi), var(--gold1) 40%, var(--gold2) 60%, var(--gold3) 95%); box-shadow:0 2px 0 var(--gold4), 0 10px 18px rgba(0,0,0,.45); animation:fall linear forwards}
-@keyframes fall{to{transform:translateY(120vh) rotate(360deg)}}
-.title3d{text-align:center; font-weight:1000; letter-spacing:.09em; text-transform:uppercase; font-size:clamp(22px,4.2vmin,36px);
-  background:linear-gradient(180deg,#fff4c9,#ffd463 45%,#c98a16);
-  -webkit-background-clip:text; background-clip:text; color:transparent;
-  text-shadow:0 2px 0 var(--gold4), 0 4px 24px rgba(255,220,120,.55), 0 0 24px rgba(255,90,200,.3);
-}
-@media (max-width:480px){ .pill{min-width:140px} .btn{padding:12px 16px} }
-:focus-visible{outline:3px solid var(--fx-pink); outline-offset:2px; border-radius:10px}
+  :root{
+    --bg1:#14021c;
+    --bg2:#2a0850;
+    --bg3:#0a0614;
+    --gold:#ffd666;
+    --gold-2:#ffb400;
+    --magenta:#ff1cc6;
+    --fucsia:#c53bff;
+    --accent:#7efff9;
+    --good:#76ff88;
+    --danger:#ff5577;
+    --shadow: 0 10px 30px rgba(0,0,0,.35), inset 0 0 30px rgba(0,0,0,.35);
+  }
+  @font-face{
+    font-family:Poppins;
+    src: local("Poppins"), local("Poppins-Regular");
+    font-display:swap;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color: transparent;}
+  html,body{margin:0;height:100%;background: radial-gradient(120% 120% at 50% -10%, var(--bg2), var(--bg1) 40%, var(--bg3));color:#eee;font-family:Poppins,system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,'Helvetica Neue',Arial;}
+  /* Bokeh / particles */
+  .bg-bokeh{position:fixed;inset:0;pointer-events:none;overflow:hidden;z-index:0}
+  .bokeh{position:absolute;border-radius:999px;filter:blur(8px);opacity:.25;
+    background: radial-gradient(circle at 30% 30%, rgba(255,255,255,.7), rgba(255,255,255,0) 60%);
+    mix-blend-mode:screen;animation:float 12s linear infinite}
+  .bokeh:nth-child(1){width:220px;height:220px;left:10%;top:15%;animation-duration:15s}
+  .bokeh:nth-child(2){width:180px;height:180px;left:70%;top:25%;animation-duration:14s}
+  .bokeh:nth-child(3){width:260px;height:260px;left:50%;top:60%;animation-duration:18s}
+  @keyframes float{0%{transform:translateY(0)}50%{transform:translateY(-20px)}100%{transform:translateY(0)}}
+
+  /* Layout */
+  .wrap{position:relative;z-index:1;min-height:100%;display:flex;flex-direction:column;align-items:center;justify-content:space-between;padding:16px 16px calc(env(safe-area-inset-bottom,0) + 16px)}
+  header{width:100%;display:flex;align-items:center;justify-content:space-between;gap:12px}
+  .brand{display:flex;align-items:center;gap:10px}
+  .brand .logo{
+    width:36px;height:36px;border-radius:12px;
+    background: conic-gradient(from 30deg, var(--gold), var(--gold-2), #fff3b2, var(--gold));
+    box-shadow: 0 0 12px rgba(255,214,102,.6), inset 0 0 8px rgba(0,0,0,.35);
+    position:relative;
+  }
+  .brand .logo::after{content:"🚗";position:absolute;inset:0;display:grid;place-items:center;font-size:22px;filter:drop-shadow(0 2px 2px rgba(0,0,0,.5))}
+  h1{font-size:18px;margin:0;background:linear-gradient(90deg,var(--gold),#fff,var(--gold));-webkit-background-clip:text;background-clip:text;color:transparent;letter-spacing:.5px;text-shadow:0 0 12px rgba(255, 204, 102, .35)}
+  .hud{display:flex;gap:10px;align-items:center}
+  .badge{border:1.2px solid rgba(255,214,102,.7);color:var(--gold);padding:6px 10px;border-radius:999px;font-size:12px;background:rgba(255,214,102,.08);box-shadow:inset 0 0 10px rgba(255,214,102,.1)}
+  .toggle{appearance:none;display:inline-flex;align-items:center;gap:8px;padding:6px 10px;border-radius:999px;border:1.2px solid rgba(255,214,102,.5);color:#eee;background:rgba(255,255,255,.04);font-size:12px}
+  .toggle:active{transform:scale(.98)}
+
+  /* Machine */
+  .machine{width:100%;max-width:520px;aspect-ratio: 10 / 13;display:flex;flex-direction:column;gap:12px;justify-content:center;align-items:center;margin:6px auto 8px;}
+  .cabinet{position:relative;width:100%;border-radius:24px;padding:12px;background:linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,0));box-shadow: var(--shadow), 0 0 50px rgba(197,59,255,.15) inset, 0 0 80px rgba(255,28,198,.08) inset, 0 0 120px rgba(255, 214, 102, .06) inset;border:1px solid rgba(255,255,255,.08)}
+  .window{position:relative;border-radius:18px;background: radial-gradient(120% 100% at 50% 0%, #1b0b2e, #0a0715);padding:10px;border:1px solid rgba(255,255,255,.06);box-shadow: inset 0 0 50px rgba(0,0,0,.35);overflow:hidden}
+  .reels{display:grid;grid-template-columns: repeat(5,1fr);gap:8px;height:calc(100% - 0px);}
+  .reel{position:relative;background:linear-gradient(180deg, #1a1330,#0c0817);border-radius:12px;border:1px solid rgba(255,255,255,.06);box-shadow:inset 0 3px 20px rgba(0,0,0,.45),inset 0 -3px 12px rgba(0,0,0,.45);overflow:hidden}
+  .strip{position:absolute;left:0;right:0;top:0;will-change:transform}
+  .cell{height:68px;display:grid;place-items:center}
+  @media (min-width:380px){.cell{height:74px}}
+  @media (min-width:420px){.cell{height:78px}}
+
+  /* Symbol card */
+  .sym{
+    width:86%;height:56px;border-radius:12px;
+    background: radial-gradient(120% 140% at 30% 20%, rgba(255,255,255,.25), rgba(255,255,255,0) 60%), linear-gradient(145deg, rgba(255,255,255,.06), rgba(255,255,255,0));
+    border:1.6px solid rgba(255,214,102,.65);
+    box-shadow: 0 4px 12px rgba(0,0,0,.45), inset 0 0 8px rgba(255,214,102,.25), 0 0 16px rgba(255,214,102,.15);
+    display:grid;place-items:center;position:relative;
+  }
+  .sym .glow{position:absolute;inset:-3px;border-radius:inherit;pointer-events:none;
+    background: radial-gradient(60% 60% at 50% 0%, rgba(255,214,102,.35), rgba(255,214,102,0) 60%);
+    filter: blur(3px);opacity:.7;
+  }
+  .sym svg{width:34px;height:34px;filter: drop-shadow(0 2px 2px rgba(0,0,0,.55));}
+
+  /* Controls */
+  .controls{display:flex;gap:12px;align-items:center;justify-content:center;margin-top:6px}
+  .btn{
+    appearance:none;border:none;cursor:pointer;border-radius:16px;padding:14px 20px;
+    background: radial-gradient(120% 120% at 50% 0%, #3a0a72, #2a0a52 40%, #1c0736);
+    color:#fff;font-weight:700;letter-spacing:.6px;text-transform:uppercase;
+    border:1.6px solid rgba(255,214,102,.7);
+    box-shadow: 0 10px 20px rgba(0,0,0,.5), inset 0 0 20px rgba(255,214,102,.15), 0 0 24px rgba(197,59,255,.25);
+    transition:transform .06s ease, box-shadow .2s ease;
+  }
+  .btn:active{transform:translateY(1px) scale(.99)}
+  .btn[disabled]{opacity:.5;filter:grayscale(.2);cursor:not-allowed}
+
+  .btn--spin{font-size:18px;position:relative;padding:16px 26px}
+  .btn--spin::after{
+    content:"";position:absolute;inset:-2px;border-radius:18px;pointer-events:none;
+    background: conic-gradient(from 120deg, rgba(255,214,102,.0) 0 20%, rgba(255,214,102,.35) 20% 40%, rgba(255,214,102,0) 40% 100%);
+    filter:blur(10px);opacity:.75;animation:rotate 3s linear infinite;
+  }
+  @keyframes rotate{to{transform:rotate(1turn)}}
+
+  .counter{font-weight:700;color:var(--gold);font-size:14px;padding:8px 12px;border-radius:999px;border:1.2px solid rgba(255,214,102,.5);background:rgba(255,255,255,.03);box-shadow:inset 0 0 10px rgba(255,214,102,.1)}
+
+  /* Payline highlight */
+  .payline{position:absolute;left:8px;right:8px;top:50%;height:2px;background:linear-gradient(90deg, transparent, var(--accent), transparent);
+    box-shadow:0 0 10px var(--accent), 0 0 16px rgba(126,255,249,.6);opacity:.4;transform:translateY(-1px)
+  }
+
+  /* Popups */
+  .modal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(10,6,20,.6);backdrop-filter: blur(3px);z-index:20}
+  .modal.show{display:flex}
+  .card{min-width:70%;max-width:440px;padding:22px;border-radius:20px;border:1.6px solid rgba(255,214,102,.6);
+    background: radial-gradient(120% 140% at 50% 0%, rgba(255,255,255,.08), rgba(255,255,255,.02));
+    box-shadow: var(--shadow), 0 0 50px rgba(255,214,102,.15) inset;
+    text-align:center;position:relative;overflow:hidden
+  }
+  .card h2{margin:0 0 8px;background:linear-gradient(90deg,var(--gold),#fff,var(--gold));-webkit-background-clip:text;background-clip:text;color:transparent;font-size:26px;letter-spacing:1px}
+  .card p{opacity:.9;margin:0 0 12px}
+  .card .ok{margin-top:10px}
+  .confetti, .coins{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+  .confetti i, .coins i{position:absolute;display:block;will-change:transform;opacity:.95}
+  .confetti i{width:8px;height:12px;background:linear-gradient(180deg,#fff,var(--magenta));border-radius:2px}
+  .coins i{width:14px;height:14px;border-radius:50%;background:radial-gradient(60% 60% at 40% 30%, #fff, var(--gold) 40%, var(--gold-2) 60%, #c98d00 90%);box-shadow:0 0 8px rgba(255,214,102,.4)}
+
+  /* Orientation lock */
+  .orient{position:fixed;inset:0;background:#0a0715;color:#eee;display:none;align-items:center;justify-content:center;z-index:40;padding:20px;text-align:center}
+  .orient.show{display:flex}
+
+  /* Flash / drama */
+  .flash{position:fixed;inset:0;background:radial-gradient(80% 80% at 50% 50%, rgba(255,255,255,.25), rgba(255,255,255,0));pointer-events:none;opacity:0;transition:opacity .3s ease;z-index:15}
+  .flash.show{opacity:1}
+  .shake{animation:shake .4s ease both}
+  @keyframes shake{0%{transform:translateX(0)}25%{transform:translateX(-3px)}50%{transform:translateX(3px)}75%{transform:translateX(-2px)}100%{transform:translateX(0)}}
+
+  /* Accessibility hint for 120Hz */
+  @media (prefers-reduced-motion: reduce){
+    .btn--spin::after{animation:none}
+  }
 </style>
 </head>
 <body>
-<div class="bg"></div>
+<div class="bg-bokeh"><span class="bokeh"></span><span class="bokeh"></span><span class="bokeh"></span></div>
+<div class="flash" id="flash"></div>
 
-<div class="app">
-  <div class="wrapper" aria-label="Tragamonedas JAC">
-    <div class="top" role="region" aria-label="Panel superior">
-      <div class="brand">Tragamonedas JAC</div>
-      <div class="stats">
-        <div class="pill" aria-live="polite"><b>Tiradas restantes</b><span id="spinsLeft">10</span></div>
-        <div class="pill"><b>Ganancia del spin</b><span id="lastWin">0</span></div>
-      </div>
-      <div class="actions">
-        <button id="soundBtn" class="btn neon" aria-pressed="true" title="Sonido ON/OFF">🔊 Sonido</button>
+<div class="wrap">
+  <header>
+    <div class="brand">
+      <div class="logo"></div>
+      <h1>Tragamonedas Agencia</h1>
+    </div>
+    <div class="hud">
+      <div id="spinCounter" class="counter" aria-live="polite">Tiradas restantes: 10</div>
+      <button id="soundToggle" class="toggle" aria-pressed="true">🔊 Sonido</button>
+    </div>
+  </header>
+
+  <main class="machine" role="region" aria-label="Máquina tragamonedas">
+    <div class="cabinet">
+      <div class="window">
+        <div class="payline" aria-hidden="true"></div>
+        <div class="reels" id="reels">
+          <!-- Reels will be injected -->
+        </div>
       </div>
     </div>
-
-    <div class="machine">
-      <div id="jackBanner" class="title3d" style="opacity:0; transition:opacity .35s">JACKPOT</div>
-      <div class="grid" id="grid" aria-label="Carretes (5×3)">
-        <!-- reels via JS -->
-      </div>
-      <div class="coins" id="coins"></div>
+    <div class="controls">
+      <button id="spinBtn" class="btn btn--spin">Girar</button>
     </div>
+  </main>
 
-    <div class="controls" role="region" aria-label="Controles">
-      <button id="spinBtn" class="btn" aria-label="Girar (SPIN)">SPIN</button>
-      <div class="small">20 líneas | Enter = Spin</div>
-    </div>
-    <div id="status" class="status" aria-live="polite" aria-atomic="true"></div>
+  <footer>
+    <span class="badge">Tema: Agencia de autos • Línea central</span>
+  </footer>
+</div>
+
+<!-- Popups -->
+<div class="modal" id="modalWin" role="dialog" aria-modal="true" aria-labelledby="mw-title">
+  <div class="card shake">
+    <div class="confetti" id="confetti"></div>
+    <h2 id="mw-title">¡PREMIO!</h2>
+    <p>¡5 iguales en la línea central!</p>
+    <button class="btn ok" data-close="#modalWin">Aceptar</button>
   </div>
 </div>
 
-<!-- ======= SVG defs (iconos) ======= -->
-<svg width="0" height="0" style="position:absolute">
-  <defs>
-    <filter id="motion-blur" x="-10%" y="-10%" width="120%" height="120%"><feGaussianBlur stdDeviation="0 2" edgeMode="duplicate"/></filter>
-    <linearGradient id="goldGrad" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#fff6d0"/><stop offset="0.45" stop-color="#f6cf61"/><stop offset="0.75" stop-color="#d79a1a"/><stop offset="1" stop-color="#8b5c00"/>
-    </linearGradient>
-    <radialGradient id="specular" cx="30%" cy="25%" r="60%">
-      <stop offset="0" stop-color="rgba(255,255,255,.85)"/><stop offset="0.4" stop-color="rgba(255,255,255,.35)"/><stop offset="1" stop-color="rgba(255,255,255,0)"/>
-    </radialGradient>
-    <g id="badge"><rect x="2" y="2" width="116" height="116" rx="22" ry="22" fill="url(#specular)"/><rect x="2" y="2" width="116" height="116" rx="22" ry="22" fill="none" stroke="url(#goldGrad)" stroke-width="6"/></g>
-    <g id="sym-SEVEN">
-      <use href="#badge"/>
-      <linearGradient id="grad777" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#ff5050"/><stop offset="0.55" stop-color="#b90505"/><stop offset="1" stop-color="#6b0000"/></linearGradient>
-      <rect x="10" y="10" width="100" height="100" rx="18" fill="url(#grad777)"/>
-      <g transform="translate(12,16)"><path d="M16,20 L56,20 L36,72 L16,72 L38,28 L16,28 Z" fill="#ffe2e2" stroke="#3d0000" stroke-width="5"/>
-        <path d="M44,20 L84,20 L64,72 L44,72 L66,28 L44,28 Z" fill="#ffe2e2" stroke="#3d0000" stroke-width="5"/></g>
-    </g>
-    <g id="sym-STAR"><use href="#badge"/><g transform="translate(18,18)"><radialGradient id="starFill" cx="35%" cy="30%" r="70%"><stop offset="0" stop-color="#fff5b0"/><stop offset="0.4" stop-color="#ffd24e"/><stop offset="1" stop-color="#ff9f0f"/></radialGradient>
-      <path d="M40 0 L49 28 L78 28 L54 44 L63 72 L40 54 L17 72 L26 44 L2 28 L31 28 Z" fill="url(#starFill)" stroke="url(#goldGrad)" stroke-width="5"/></g></g>
-    <g id="sym-BELL"><use href="#badge"/><g transform="translate(22,18)"><linearGradient id="bellFill" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffe9a6"/><stop offset="1" stop-color="#e5a10a"/></linearGradient>
-      <path d="M44 10a10 10 0 0 0-20 0c-14 8-20 28-18 44h56c2-16-4-36-18-44z" fill="url(#bellFill)" stroke="url(#goldGrad)" stroke-width="5"/>
-      <circle cx="34" cy="66" r="8" fill="#ffd24e" stroke="#a96a00" stroke-width="4"/></g></g>
-    <g id="sym-CHERRY"><use href="#badge"/><g transform="translate(18,18)"><radialGradient id="cherry" cx="30%" cy="30%" r="60%"><stop offset="0" stop-color="#ff9aa0"/><stop offset="1" stop-color="#b10216"/></radialGradient>
-      <circle cx="30" cy="60" r="16" fill="url(#cherry)" stroke="#53000a" stroke-width="5"/><circle cx="58" cy="64" r="16" fill="url(#cherry)" stroke="#53000a" stroke-width="5"/>
-      <path d="M38 46C36 36 46 28 64 28" fill="none" stroke="#4d8f3a" stroke-width="6"/>
-      <path d="M58 30c10-14 22-12 30-12" fill="none" stroke="url(#goldGrad)" stroke-width="4"/>
-      <ellipse cx="64" cy="26" rx="10" ry="6" fill="#3ea23f"/></g></g>
-    <g id="sym-LEMON"><use href="#badge"/><g transform="translate(16,24)"><radialGradient id="lemon" cx="40%" cy="30%" r="60%"><stop offset="0" stop-color="#fff9b5"/><stop offset="1" stop-color="#f3c213"/></radialGradient>
-      <ellipse cx="48" cy="40" rx="36" ry="26" fill="url(#lemon)" stroke="#a36b00" stroke-width="6"/>
-      <path d="M84 38c-6-8-6-14 0-22 8 6 10 16 0 22z" fill="#3ea23f" stroke="#1e5e1f" stroke-width="4"/></g></g>
-    <g id="sym-ORANGE"><use href="#badge"/><g transform="translate(16,18)"><radialGradient id="orange" cx="35%" cy="30%" r="60%"><stop offset="0" stop-color="#ffd2a0"/><stop offset="1" stop-color="#ff8c20"/></radialGradient>
-      <circle cx="50" cy="52" r="28" fill="url(#orange)" stroke="#a95005" stroke-width="6"/>
-      <circle cx="58" cy="36" r="6" fill="#fff" opacity=".35"/>
-      <path d="M44 26c8-8 20-8 28 0" stroke="#3ea23f" stroke-width="6" fill="none"/></g></g>
-    <g id="sym-GRAPE"><use href="#badge"/><g transform="translate(18,18)"><radialGradient id="grape" cx="40%" cy="40%" r="60%"><stop offset="0" stop-color="#d3c6ff"/><stop offset="1" stop-color="#401b84"/></radialGradient>
-      <g fill="url(#grape)" stroke="#240555" stroke-width="5"><circle cx="38" cy="66" r="10"/><circle cx="50" cy="66" r="10"/><circle cx="62" cy="66" r="10"/><circle cx="44" cy="54" r="10"/><circle cx="56" cy="54" r="10"/><circle cx="50" cy="42" r="10"/></g>
-      <path d="M50 26c6-10 10-10 18-10" stroke="#3ea23f" stroke-width="6" fill="none"/></g></g>
-    <g id="sym-KIWI"><use href="#badge"/><g transform="translate(16,20)"><radialGradient id="kiwi" cx="50%" cy="50%" r="48%"><stop offset="0" stop-color="#e8ffd8"/><stop offset="0.45" stop-color="#a3e36d"/><stop offset="1" stop-color="#4ea82f"/></radialGradient>
-      <circle cx="50" cy="50" r="28" fill="url(#kiwi)" stroke="#1b5d14" stroke-width="6"/>
-      <g stroke="#1c3f12" stroke-width="3"><line x1="50" y1="22" x2="50" y2="78"/><line x1="22" y1="50" x2="78" y2="50"/><line x1="32" y1="32" x2="68" y2="68"/><line x1="68" y1="32" x2="32" y2="68"/></g></g></g>
-    <g id="sym-PLUM"><use href="#badge"/><g transform="translate(18,24)"><radialGradient id="plum" cx="40%" cy="30%" r="60%"><stop offset="0" stop-color="#e0ccff"/><stop offset="1" stop-color="#6113b0"/></radialGradient>
-      <ellipse cx="46" cy="36" rx="28" ry="22" fill="url(#plum)" stroke="#2b035f" stroke-width="6"/>
-      <path d="M64 18c6-8 16-10 22-10" stroke="#3ea23f" stroke-width="6" fill="none"/></g></g>
-  </defs>
-</svg>
+<div class="modal" id="modalJackpot" role="dialog" aria-modal="true" aria-labelledby="mj-title">
+  <div class="card">
+    <div class="coins" id="coins"></div>
+    <h2 id="mj-title">🎉 ¡PREMIO MAYOR! 🎉</h2>
+    <p>¡Modo especial activado! Disfruta 5 tiradas con suerte aumentada.</p>
+    <button class="btn ok" data-close="#modalJackpot">Continuar</button>
+  </div>
+</div>
+
+<div class="orient" id="orient">
+  <div>
+    <h3>Gira tu teléfono</h3>
+    <p>Este juego está optimizado para orientación vertical.</p>
+  </div>
+</div>
 
 <script>
-const CONFIG = {
-  reels: 5, rows: 3, lines: 20,
-  // usamos bet base para escalar multiplicadores, aunque no mostramos saldo
-  betBase: 50,
-  maxWinMultiplier: 50,
-  weights: { CHERRY: 8, LEMON: 8, ORANGE: 7, PLUM: 7, KIWI: 6, GRAPE: 6, STAR: 4, BELL: 3, SEVEN: 1 },
-  payouts: {
-    CHERRY: {3: 5, 4: 20, 5: 60},
-    LEMON:  {3: 5, 4: 20, 5: 60},
-    ORANGE: {3:10, 4:30, 5:80},
-    PLUM:   {3:10, 4:30, 5:80},
-    KIWI:   {3:15, 4:40, 5:100},
-    GRAPE:  {3:15, 4:40, 5:100},
-    STAR:   {3:25, 4:80, 5:200},
-    BELL:   {3:40, 4:120,5:300},
-    SEVEN:  {3:200,4:800,5:3000}
-  },
-  jackpotBonus: 5000
-};
-const PAYLINES = [
-  [1,1,1,1,1],[0,0,0,0,0],[2,2,2,2,2],[0,1,2,1,0],[2,1,0,1,2],
-  [0,0,1,0,0],[2,2,1,2,2],[1,0,1,2,1],[1,2,1,0,1],[0,1,1,1,0],
-  [2,1,1,1,2],[0,1,0,1,0],[2,1,2,1,2],[1,1,0,1,1],[1,1,2,1,1],
-  [0,2,0,2,0],[2,0,2,0,2],[0,2,1,2,0],[2,0,1,0,2],[1,0,2,0,1]
+/* ==============================
+   Utilidades visuales / SVG
+============================== */
+const SYMBOLS = [
+  // id, SVG path (simplificado), title
+  {id:'sedan', title:'Sedán', svg:`<svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M7 27h34l-2-6-10-5H19l-6 5-6 6z" stroke="url(#g1)" stroke-width="2" fill="rgba(255,255,255,.06)"/>
+    <defs><linearGradient id="g1" x1="0" y1="0" x2="48" y2="0"><stop stop-color="#fff"/><stop offset="1" stop-color="#ffd666"/></linearGradient></defs>
+    <circle cx="14" cy="29" r="3.5" fill="#ffd666"/><circle cx="34" cy="29" r="3.5" fill="#ffd666"/>
+  </svg>`},
+  {id:'suv', title:'SUV', svg:`<svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M8 26h32l-2-7-7-5H18l-6 5-4 7z" stroke="url(#g2)" stroke-width="2" fill="rgba(255,255,255,.06)"/>
+    <defs><linearGradient id="g2" x1="0" y1="0" x2="48" y2="0"><stop stop-color="#fff"/><stop offset="1" stop-color="#ffd666"/></linearGradient></defs>
+    <circle cx="15" cy="29.5" r="3.2" fill="#ffd666"/><circle cx="33" cy="29.5" r="3.2" fill="#ffd666"/>
+  </svg>`},
+  {id:'pickup', title:'Pickup', svg:`<svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M7 26h34v-7h-8l-5-5h-8l-5 5H7v7z" stroke="url(#g3)" stroke-width="2" fill="rgba(255,255,255,.06)"/>
+    <defs><linearGradient id="g3" x1="0" y1="0" x2="48" y2="0"><stop stop-color="#fff"/><stop offset="1" stop-color="#ffd666"/></linearGradient></defs>
+    <circle cx="15" cy="29.5" r="3.2" fill="#ffd666"/><circle cx="33" cy="29.5" r="3.2" fill="#ffd666"/>
+  </svg>`},
+  {id:'volante', title:'Volante', svg:`<svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="24" cy="24" r="13" stroke="url(#g4)" stroke-width="2"/><circle cx="24" cy="24" r="4.5" fill="#ffd666"/>
+    <path d="M13 24h22M19 18l-6-2M29 18l6-2" stroke="#ffd666" stroke-width="2"/>
+    <defs><linearGradient id="g4" x1="0" y1="0" x2="48" y2="0"><stop stop-color="#fff"/><stop offset="1" stop-color="#ffd666"/></linearGradient></defs>
+  </svg>`},
+  {id:'velocimetro', title:'Velocímetro', svg:`<svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="24" cy="28" r="12" stroke="url(#g5)" stroke-width="2"/>
+    <path d="M24 28l8-8" stroke="#ffd666" stroke-width="3" stroke-linecap="round"/>
+    <defs><linearGradient id="g5" x1="0" y1="0" x2="48" y2="0"><stop stop-color="#fff"/><stop offset="1" stop-color="#ffd666"/></linearGradient></defs>
+  </svg>`},
+  {id:'llaves', title:'Llaves', svg:`<svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="17" cy="20" r="6" stroke="url(#g6)" stroke-width="2"/>
+    <path d="M22 24l10 10 2-2 2 2 2-2-2-2 2-2" stroke="#ffd666" stroke-width="2"/>
+    <defs><linearGradient id="g6" x1="0" y1="0" x2="48" y2="0"><stop stop-color="#fff"/><stop offset="1" stop-color="#ffd666"/></linearGradient></defs>
+  </svg>`},
+  {id:'bateria', title:'Batería EV', svg:`<svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <rect x="10" y="16" width="26" height="18" rx="3" stroke="url(#g7)" stroke-width="2"/>
+    <rect x="36" y="20" width="2" height="10" fill="#ffd666"/>
+    <path d="M24 18l-4 7h5l-3 7" stroke="#ffd666" stroke-width="2"/>
+    <defs><linearGradient id="g7" x1="0" y1="0" x2="48" y2="0"><stop stop-color="#fff"/><stop offset="1" stop-color="#ffd666"/></linearGradient></defs>
+  </svg>`},
+  {id:'estrella', title:'Estrella', svg:`<svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M24 6l4.5 10H40l-9 6.5L34 36l-10-6.5L14 36l3-13.5L8 16h11.5L24 6z" fill="url(#g8)" stroke="#ffd666" stroke-width="1.5"/>
+    <defs><linearGradient id="g8" x1="0" y1="0" x2="48" y2="0"><stop stop-color="#fff"/><stop offset="1" stop-color="#ffd666"/></linearGradient></defs>
+  </svg>`},
+  {id:'bono', title:'Bono', svg:`<svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <rect x="10" y="16" width="28" height="16" rx="4" stroke="url(#g9)" stroke-width="2" fill="rgba(255,255,255,.05)"/>
+    <text x="24" y="27" text-anchor="middle" fill="#ffd666" font-size="10" font-weight="700">BONO</text>
+    <defs><linearGradient id="g9" x1="0" y1="0" x2="48" y2="0"><stop stop-color="#fff"/><stop offset="1" stop-color="#ffd666"/></linearGradient></defs>
+  </svg>`},
+  {id:'test', title:'Test Drive', svg:`<svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <rect x="12" y="14" width="24" height="20" rx="4" stroke="url(#g10)" stroke-width="2"/>
+    <path d="M16 22h16M16 27h10" stroke="#ffd666" stroke-width="2"/>
+    <circle cx="33" cy="27" r="3" fill="#ffd666"/>
+    <defs><linearGradient id="g10" x1="0" y1="0" x2="48" y2="0"><stop stop-color="#fff"/><stop offset="1" stop-color="#ffd666"/></linearGradient></defs>
+  </svg>`},
 ];
-const SFX = {
-  enabled:true,
-  spin:new Audio("data:audio/wav;base64,UklGRkQAAABXQVZFZm10IBAAAAABAAEAESsAACJWAAACABYBAGZmZmZmZgAAAP//AAD///8AAP//AAAAAP//AACAgICAAAD/AACAgP8A/wAA/4AAAP8AAP+AAAD/AAAAAACAgICAgICAgP8AAAAAAAA="),
-  stop:new Audio("data:audio/wav;base64,UklGRlIAAABXQVZFZm10IBAAAAABAAEAESsAACJWAAACABYBAGZmAAD/AP//AP8AAP//AAAAAP8A/wD/AAAAAACAgAAAAP8A/wAAAP8A"),
-  win:new Audio("data:audio/wav;base64,UklGRnIAAABXQVZFZm10IBAAAAABAAEAESsAACJWAAACABYBAGZmZmYAAAD/AP8A/4AAAP8A/4AAAP8A/4AAAP8AAP//AAAAAP8A/wAA"),
-  jack:new Audio("data:audio/wav;base64,UklGRoQAAABXQVZFZm10IBAAAAABAAEAESsAACJWAAACABYBAGZmZmZmZmZmAAAA/wD/gAAA/4AAAP+AAAD/AAAA/4AAAP8AAP//AAAA")
-}; Object.values(SFX).forEach(a=>{if(a instanceof Audio)a.volume=.35});
+const PAYLINE_INDEX = 1; // fila central 0..2
+const ROWS = 3, COLS = 5;
+const MAX_SPINS = 10;
 
-let spinsLeft = 10;
-let spinning=false;
+/* ==============================
+   Estado del juego
+============================== */
+let spinsLeft = MAX_SPINS;
+let spinning = false;
+let audioOn = true;
+let inJackpotMode = false; // durante las 5 auto-tiradas dramáticas
+let jackpotAutoSpins = 0;
+let ctxAudio, masterGain;
 
-const $grid=document.getElementById('grid');
-const $spinsLeft=document.getElementById('spinsLeft');
-const $lastWin=document.getElementById('lastWin');
-const $status=document.getElementById('status');
-const $spinBtn=document.getElementById('spinBtn');
-const $soundBtn=document.getElementById('soundBtn');
-const $coins=document.getElementById('coins');
-const $jackBanner=document.getElementById('jackBanner');
+/* ==============================
+   DOM
+============================== */
+const reelsEl = document.getElementById('reels');
+const spinBtn = document.getElementById('spinBtn');
+const spinCounter = document.getElementById('spinCounter');
+const soundToggle = document.getElementById('soundToggle');
+const modalWin = document.getElementById('modalWin');
+const modalJack = document.getElementById('modalJackpot');
+const flashEl = document.getElementById('flash');
 
-document.addEventListener('DOMContentLoaded',()=>{
-  buildGrid();
-  $spinsLeft.textContent=spinsLeft;
-  $spinBtn.addEventListener('click', spin);
-  document.addEventListener('keydown', e=>{ if(e.key==='Enter') $spinBtn.click(); });
-  $soundBtn.addEventListener('click', ()=>{
-    SFX.enabled=!SFX.enabled;
-    $soundBtn.setAttribute('aria-pressed', String(SFX.enabled));
-    $soundBtn.textContent=SFX.enabled?'🔊 Sonido':'🔇 Silencio';
+/* ==============================
+   Construcción de carretes
+============================== */
+const stripOrder = [...SYMBOLS.map(s=>s.id)]; // simple ciclo
+function buildReels(){
+  reelsEl.innerHTML = '';
+  for(let c=0;c<COLS;c++){
+    const reel = document.createElement('div');
+    reel.className = 'reel';
+    const strip = document.createElement('div');
+    strip.className = 'strip';
+    // TRES filas visibles + extra arriba/abajo para scroll visual
+    const cellsToRender = ROWS*3;
+    // Para animación continua, renderizamos varias veces el set
+    const repeats = 6; // suficiente alto
+    for(let r=0;r<repeats;r++){
+      for(const id of stripOrder){
+        const cell = document.createElement('div');
+        cell.className = 'cell';
+        cell.dataset.symbol = id;
+        cell.innerHTML = symbolCard(id);
+        strip.appendChild(cell);
+      }
+    }
+    reel.appendChild(strip);
+    reelsEl.appendChild(reel);
+  }
+}
+function symbolCard(id){
+  const sym = SYMBOLS.find(s=>s.id===id);
+  return `<div class="sym" aria-label="${sym.title}"><span class="glow"></span>${sym.svg}</div>`;
+}
+buildReels();
+
+/* ==============================
+   Orientación vertical
+============================== */
+const orientEl = document.getElementById('orient');
+function checkOrientation(){
+  const isLandscape = window.matchMedia('(orientation: landscape)').matches;
+  orientEl.classList.toggle('show', isLandscape);
+}
+addEventListener('resize', checkOrientation);
+addEventListener('orientationchange', checkOrientation);
+checkOrientation();
+
+/* ==============================
+   Sonido (WebAudio)
+============================== */
+function ensureAudio(){
+  if(ctxAudio) return;
+  ctxAudio = new (window.AudioContext || window.webkitAudioContext)();
+  masterGain = ctxAudio.createGain();
+  masterGain.gain.value = 0.6;
+  masterGain.connect(ctxAudio.destination);
+}
+function playBeep(freq=880, dur=0.08, vol=0.2, type='sine'){
+  if(!audioOn) return;
+  ensureAudio();
+  const o = ctxAudio.createOscillator();
+  const g = ctxAudio.createGain();
+  o.type = type; o.frequency.value = freq;
+  g.gain.value = vol;
+  o.connect(g).connect(masterGain);
+  o.start();
+  o.stop(ctxAudio.currentTime + dur);
+}
+function playNoiseSpin(dur=2.0){
+  if(!audioOn) return ()=>{};
+  ensureAudio();
+  const bufferSize = ctxAudio.sampleRate * dur;
+  const buffer = ctxAudio.createBuffer(1, bufferSize, ctxAudio.sampleRate);
+  const data = buffer.getChannelData(0);
+  for(let i=0;i<bufferSize;i++){ data[i] = (Math.random()*2-1) * (1 - i/bufferSize); } // fade-out
+  const src = ctxAudio.createBufferSource();
+  const g = ctxAudio.createGain(); g.gain.value = 0.15;
+  src.buffer = buffer; src.loop = false;
+  src.connect(g).connect(masterGain);
+  src.start();
+  return ()=>{ try{src.stop();}catch(e){} };
+}
+function jingleWin(){
+  [880, 1175, 1760].forEach((f,i)=>setTimeout(()=>playBeep(f,0.12,0.28,'triangle'), i*120));
+}
+function jingleJackpot(){
+  [660, 880, 1320, 1760, 1320, 880].forEach((f,i)=>setTimeout(()=>playBeep(f,0.14,0.3,'square'), i*140));
+}
+
+/* ==============================
+   Probabilidades y resultado
+============================== */
+function decideOutcome(){
+  // Prioridad: Jackpot 5%, luego Premio 10%
+  const r = Math.random();
+  if(r < 0.05) return { type:'JACKPOT_TRIGGER' };
+  if(r < 0.15) return { type:'WIN' }; // 10%
+  return { type:'NORMAL' };
+}
+
+function pickRandomSymbolId(){
+  const idx = Math.floor(Math.random()*SYMBOLS.length);
+  return SYMBOLS[idx].id;
+}
+
+/* ==============================
+   Animación de tirada
+============================== */
+const reelHeights = []; // calculado al volar
+function getCellHeight(){
+  const sample = document.querySelector('.cell');
+  return sample ? sample.getBoundingClientRect().height : 72;
+}
+function spinReels(targetCenterRowSymbols){
+  return new Promise((resolve)=>{
+    const cleanupNoise = playNoiseSpin(1.8);
+    const reels = Array.from(document.querySelectorAll('.reel'));
+    const cellH = getCellHeight();
+    const stride = SYMBOLS.length * cellH;
+    const start = performance.now();
+    const baseDur = 1600; // ms
+    const settleDelays = [0,120,240,360,480];
+    reels.forEach((reel, idx)=>{
+      const strip = reel.querySelector('.strip');
+      const initial = - (Math.random()*stride);
+      strip.style.transform = `translate3d(0, ${initial}px, 0)`;
+      const targetId = targetCenterRowSymbols ? targetCenterRowSymbols[idx] : null;
+      const totalLoops = 6 + idx; // para apariencia
+      const destOffset = (()=>{
+        // Queremos que la celda del PAYLINE quede en el centro
+        let targetSymbol = targetId || pickRandomSymbolId();
+        // pos del primer target en strip:
+        const occurrenceIndex = SYMBOLS.findIndex(s=>s.id===targetSymbol);
+        // Calculamos un desplazamiento grande + ajuste a la posición exacta
+        return -(totalLoops*stride + occurrenceIndex*cellH + cellH*PAYLINE_INDEX);
+      })();
+
+      const dur = baseDur + settleDelays[idx]; // escalado por columna
+      const easing = (t)=>1 - Math.pow(1 - t, 3); // ease-out-cubic
+
+      function frame(ts){
+        const t = Math.min(1, (ts - start) / dur);
+        const y = initial + (destOffset - initial) * easing(t);
+        strip.style.transform = `translate3d(0, ${y}px, 0)`;
+        if(t < 1) requestAnimationFrame(frame);
+        else {
+          // pequeño tick
+          playBeep(220 + idx*40, 0.04, 0.12, 'sine');
+          if(idx === reels.length-1){
+            cleanupNoise && cleanupNoise();
+            resolve();
+          }
+        }
+      }
+      requestAnimationFrame(frame);
+    });
+  });
+}
+
+function getCenterLineSymbols(){
+  // lee qué símbolo quedó en cada carrete en la fila central
+  const cellH = getCellHeight();
+  const reels = Array.from(document.querySelectorAll('.reel'));
+  return reels.map(reel=>{
+    const strip = reel.querySelector('.strip');
+    const y = new WebKitCSSMatrix(getComputedStyle(strip).transform).m42 || 0;
+    // posición positiva hacia abajo; celda índice = round((-y)/cellH)
+    const idx = Math.round((-y)/cellH) % SYMBOLS.length;
+    const symId = strip.children[(idx)].dataset.symbol;
+    return symId;
+  });
+}
+
+/* ==============================
+   Efectos
+============================== */
+function makeConfetti(parent, n=60, dur=1400){
+  parent.innerHTML='';
+  const rect = parent.getBoundingClientRect();
+  for(let i=0;i<n;i++){
+    const el = document.createElement('i');
+    el.style.left = (Math.random()*rect.width) + 'px';
+    el.style.top = (-20 - Math.random()*80) + 'px';
+    el.style.transform = `rotate(${Math.random()*360}deg)`;
+    parent.appendChild(el);
+    const dy = rect.height + 40 + Math.random()*80;
+    const dx = (Math.random()*80-40);
+    const rot = (Math.random()*720-360);
+    const t0 = performance.now();
+    const d = dur + Math.random()*600;
+    function anim(ts){
+      const t = Math.min(1, (ts - t0)/d);
+      el.style.transform = `translate(${dx*t}px, ${dy*t}px) rotate(${rot*t}deg)`;
+      if(t<1) requestAnimationFrame(anim); else el.remove();
+    }
+    requestAnimationFrame(anim);
+  }
+}
+function makeCoins(parent, n=40, dur=1600){
+  parent.innerHTML='';
+  const rect = parent.getBoundingClientRect();
+  for(let i=0;i<n;i++){
+    const el = document.createElement('i');
+    el.style.left = (Math.random()*rect.width) + 'px';
+    el.style.top = (-20 - Math.random()*80) + 'px';
+    parent.appendChild(el);
+    const dy = rect.height + 40 + Math.random()*60;
+    const dx = (Math.random()*120-60);
+    const rot = (Math.random()*720-360);
+    const t0 = performance.now();
+    const d = dur + Math.random()*700;
+    function anim(ts){
+      const t = Math.min(1, (ts - t0)/d);
+      el.style.transform = `translate(${dx*t}px, ${dy*t}px) rotate(${rot*t}deg)`;
+      if(t<1) requestAnimationFrame(anim); else el.remove();
+    }
+    requestAnimationFrame(anim);
+  }
+}
+function flash(){
+  flashEl.classList.add('show');
+  setTimeout(()=>flashEl.classList.remove('show'), 180);
+}
+
+/* ==============================
+   Popups
+============================== */
+function showModal(el){
+  el.classList.add('show');
+}
+function hideModal(el){
+  el.classList.remove('show');
+}
+document.querySelectorAll('[data-close]').forEach(btn=>{
+  btn.addEventListener('click', (e)=>{
+    const sel = e.currentTarget.getAttribute('data-close');
+    const m = document.querySelector(sel);
+    hideModal(m);
   });
 });
 
-function buildGrid(){
-  $grid.innerHTML='';
-  for(let r=0;r<CONFIG.reels;r++){
-    const reel=document.createElement('div'); reel.className='reel';
-    const strip=document.createElement('div'); strip.className='strip';
-    for(let i=0;i<24;i++) strip.appendChild(makeCell(weightedPick()));
-    reel.appendChild(strip); $grid.appendChild(reel);
-  }
-}
-function makeCell(sym){
-  const cell=document.createElement('div'); cell.className='cell'; cell.dataset.symbol=sym;
-  const svg=document.createElementNS('http://www.w3.org/2000/svg','svg'); svg.setAttribute('viewBox','0 0 120 120'); svg.classList.add('symbol');
-  const use=document.createElementNS('http://www.w3.org/2000/svg','use'); use.setAttributeNS('http://www.w3.org/1999/xlink','href',`#sym-${sym}`);
-  svg.appendChild(use); cell.appendChild(svg); return cell;
-}
-function weightedPick(){
-  if(!weightedPick.bag){
-    const bag=[]; for(const k in CONFIG.weights){ for(let i=0;i<CONFIG.weights[k];i++) bag.push(k); }
-    weightedPick.bag=bag;
-  }
-  const b=weightedPick.bag; return b[(Math.random()*b.length)|0];
+/* ==============================
+   Lógica de juego
+============================== */
+function updateCounter(){
+  spinCounter.textContent = `Tiradas restantes: ${spinsLeft}`;
 }
 
-function spin(){
+async function doSpin(manual=true){
   if(spinning) return;
-  if(spinsLeft<=0){ announce('Juego terminado'); return; }
-  spinning=true; $spinBtn.disabled=true; $grid.classList.add('spinning');
-  $status.textContent='Girando…'; clearWins();
-  spinsLeft--; $spinsLeft.textContent=spinsLeft;
+  if(manual && spinsLeft<=0) return;
+  spinning = true;
+  spinBtn.disabled = true;
 
-  if(SFX.enabled) SFX.spin.currentTime=0, SFX.spin.play();
-
-  const result = Array.from({length:CONFIG.reels}, ()=>Array.from({length:CONFIG.rows}, ()=>weightedPick()));
-  const evalData = evaluateLines(result);
-
-  const reels=[...$grid.querySelectorAll('.reel')];
-  const base=3500, step=180;
-  reels.forEach((reel,i)=> stopReel(reel, result[i], base + i*step));
-
-  setTimeout(()=>{
-    spinning=false; $spinBtn.disabled=false; $grid.classList.remove('spinning');
-    setHighlights(evalData.hitCells);
-    const win = applyPayout(evalData);
-    $lastWin.textContent=win;
-    if(win>0){
-      if(SFX.enabled) SFX.win.currentTime=0, SFX.win.play();
-      renderWinEffects(win); announce(`Ganaste ${win} créditos`);
-    } else announce('Sin premio');
-    if(spinsLeft<=0){ $spinBtn.disabled=true; announce('Juego terminado'); }
-  }, base + (CONFIG.reels-1)*step + 240);
-}
-
-function stopReel(reel, symbols, durationMs){
-  const strip=reel.querySelector('.strip');
-  const cellH=strip.firstElementChild.getBoundingClientRect().height;
-  symbols.forEach(sym=> strip.appendChild(makeCell(sym)));
-  const total=strip.children.length;
-  const endIndex=total - CONFIG.rows;
-  const endY=-(endIndex*cellH);
-  const cycles=5 + (Math.random()*2|0);
-  const distance=-((cycles*CONFIG.rows*cellH)) + endY;
-  const startT=performance.now(); const startY=0;
-  const ease=t=>1-Math.pow(1-t,3);
-  function frame(now){
-    const t=Math.min(1,(now-startT)/durationMs);
-    const y=startY + distance*ease(t);
-    strip.style.transform=`translateY(${y}px)`; strip.style.setProperty('--endY', `${endY}px`);
-    if(t<1){ requestAnimationFrame(frame); }
-    else{
-      const last3=Array.from(strip.children).slice(-CONFIG.rows);
-      strip.innerHTML=''; last3.forEach(n=> strip.appendChild(n));
-      strip.style.transform='translateY(0px)';
-      reel.classList.add('stop'); if(SFX.enabled){ SFX.stop.currentTime=0; SFX.stop.play(); }
-      setTimeout(()=>reel.classList.remove('stop'),260);
-    }
+  if(manual){
+    spinsLeft--;
+    updateCounter();
   }
-  requestAnimationFrame(frame);
+
+  const outcome = manual && !inJackpotMode ? decideOutcome() : {type:'NORMAL'};
+
+  if(outcome.type==='JACKPOT_TRIGGER' && !inJackpotMode){
+    // No consumimos tiradas adicionales: las 5 son parte del evento
+    inJackpotMode = true;
+    jackpotAutoSpins = 5;
+    jingleJackpot();
+    showModal(modalJack);
+    makeCoins(document.getElementById('coins'));
+    // pequeña pausa para leer el modal
+    const wait = ms => new Promise(r=>setTimeout(r, ms));
+    await wait(900);
+    hideModal(modalJack);
+    await jackpotSequence();
+    inJackpotMode = false;
+    spinning = false;
+    spinBtn.disabled = spinsLeft<=0;
+    // Si ya no quedan tiradas, el botón queda desactivado (no hay reinicio)
+    return;
+  }
+
+  let targetSymbols = null;
+  if(outcome.type==='WIN'){
+    // 5 iguales garantizados en payline
+    const chosen = pickRandomSymbolId();
+    targetSymbols = [chosen, chosen, chosen, chosen, chosen];
+  }
+
+  // Animación y resolución
+  await spinReels(targetSymbols);
+
+  // Si fue WIN natural, popup
+  if(outcome.type==='WIN'){
+    jingleWin();
+    flash();
+    const c = document.getElementById('confetti');
+    makeConfetti(c);
+    showModal(modalWin);
+  }
+
+  spinning = false;
+  spinBtn.disabled = spinsLeft<=0;
 }
 
-function evaluateLines(result){
-  const hitCells=[]; let totalMult=0;
-  for(let i=0;i<PAYLINES.length;i++){
-    const p=PAYLINES[i]; const first=result[0][p[0]]; let count=1;
-    for(let r=1;r<CONFIG.reels;r++){ if(result[r][p[r]]===first) count++; else break; }
-    if(count>=3){
-      const mult=(CONFIG.payouts[first]||{})[count]||0;
-      if(mult>0){ for(let r=0;r<count;r++) hitCells.push([r,p[r]]); totalMult+=mult; }
+async function jackpotSequence(){
+  const wait = ms => new Promise(r=>setTimeout(r, ms));
+  // 4 tiradas con "coincidencias aumentadas" (no garantizadas), 5ª garantizada 5-iguales
+  for(let i=1;i<=5;i++){
+    // dramatismo
+    document.querySelector('.cabinet').classList.add('shake');
+    setTimeout(()=>document.querySelector('.cabinet').classList.remove('shake'), 400);
+    // luces/sound
+    playBeep(330 + i*70, .09, .2, 'sawtooth');
+    flash();
+    // Durante el evento, no consumimos spinsLeft
+    let target = null;
+    if(i===5){
+      const chosen = pickRandomSymbolId();
+      target = [chosen, chosen, chosen, chosen, chosen];
+    }else{
+      // Aumentar coincidencias: hacemos 2-3 carretes iguales
+      const chosen = pickRandomSymbolId();
+      const sameCount = 2 + Math.floor(Math.random()*2); // 2 o 3
+      target = Array(COLS).fill(null).map((_,idx)=> idx<sameCount ? chosen : pickRandomSymbolId());
     }
+    await spinReels(target);
+    await wait(120 + i*60);
   }
-  const isJack=(result[1][1]==='SEVEN' && result[2][1]==='SEVEN' && result[3][1]==='SEVEN');
-  return {hitCells,totalMultiplier:totalMult,isJack};
+  // Final: PREMIO MAYOR modal + lluvia de monedas + jingle
+  jingleJackpot();
+  flash();
+  const coins = document.getElementById('coins');
+  makeCoins(coins, 60, 1800);
+  showModal(modalJack);
 }
-function applyPayout(evalData){
-  let win = Math.round(evalData.totalMultiplier * (CONFIG.betBase/50));
-  if(evalData.isJack){ win += CONFIG.jackpotBonus; showJackpot(); }
-  const cap = CONFIG.maxWinMultiplier * CONFIG.betBase;
-  return Math.min(win, cap);
-}
-function setHighlights(cells){
-  $grid.querySelectorAll('.cell').forEach(c=> c.classList.remove('win'));
-  const reels=[...$grid.querySelectorAll('.reel')];
-  cells.forEach(([x,y])=>{
-    const cell=reels[x].querySelector('.strip').children[y]; if(cell) cell.classList.add('win');
-  });
-}
-function clearWins(){ $grid.querySelectorAll('.cell').forEach(c=> c.classList.remove('win')); }
-function renderWinEffects(amount){ const n=Math.min(36, 6 + Math.floor(amount/(CONFIG.betBase*2))); for(let i=0;i<n;i++) spawnCoin(); }
-function spawnCoin(){ const c=document.createElement('div'); c.className='coin'; c.style.left=(Math.random()*100)+'%'; c.style.animationDuration=(2+Math.random()*1.4)+'s'; c.style.animationDelay=(Math.random()*0.2)+'s'; c.style.transform=`translateY(${(-20 - Math.random()*40)}px)`; $coins.appendChild(c); setTimeout(()=>c.remove(),4200); }
-function showJackpot(){ $jackBanner.style.opacity=1; if(SFX.enabled){ SFX.jack.currentTime=0; SFX.jack.play(); } for(let i=0;i<48;i++) spawnCoin(); setTimeout(()=> $jackBanner.style.opacity=0, 2300); }
-function announce(msg){ $status.textContent = msg; }
+
+/* ==============================
+   Eventos
+============================== */
+spinBtn.addEventListener('click', ()=>{
+  if(!ctxAudio && audioOn){ ensureAudio(); }
+  doSpin(true);
+});
+soundToggle.addEventListener('click', ()=>{
+  audioOn = !audioOn;
+  soundToggle.textContent = audioOn ? '🔊 Sonido' : '🔇 Silencio';
+  soundToggle.setAttribute('aria-pressed', audioOn ? 'true' : 'false');
+  if(audioOn){ playBeep(880, .06, .2, 'triangle'); }
+});
+
+updateCounter();
+spinBtn.disabled = false;
+
+/* ==============================
+   Accesibilidad / 120Hz ready
+============================== */
+// requestAnimationFrame ya usa el refresh de la pantalla (60/90/120Hz).
+// Evitamos setInterval para animaciones core y preferimos transforms.
 </script>
 </body>
 </html>
