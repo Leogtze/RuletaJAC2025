@@ -92,9 +92,7 @@
     box-shadow: 0 0 10px currentColor, 0 0 18px currentColor; }
 
   /* GRID 3x3 */
-  .board-wrap{
-    display:grid; place-items:center;
-  }
+  .board-wrap{ display:grid; place-items:center; }
   .board{
     display:grid;
     grid-template-columns: repeat(3, var(--cardW));
@@ -106,10 +104,8 @@
   }
 
   /* CARD */
-  .card{
-    width:var(--cardW); height:var(--cardW);
-    perspective: 1000px;
-  }
+  .card{ width:var(--cardW); height:var(--cardW); perspective: 1000px; }
+  .card.disabled{ pointer-events:none; }
   .card-inner{
     position:relative; width:100%; height:100%;
     transform-style: preserve-3d;
@@ -132,6 +128,14 @@
     background: linear-gradient(145deg, #ffe478, #ffb800 40%, #e18c00 80%);
     box-shadow: 0 10px 28px rgba(0,0,0,.5), inset 0 0 0 2px rgba(255,255,255,.35);
     position:relative; overflow:hidden;
+  }
+  /* Clearer back visuals */
+  .back::before{
+    content:"JAC";
+    position:absolute; inset:0;
+    display:grid; place-items:center;
+    font-weight:900; letter-spacing:.3em; font-size: clamp(16px, 6vw, 28px);
+    color:#2d0a23cc; text-shadow: 0 1px 0 #fff7;
   }
   .back::after{
     content:""; position:absolute; inset:-30% -30% auto auto;
@@ -303,8 +307,6 @@
 (function(){
   const $ = (sel, ctx=document) => ctx.querySelector(sel);
   const $$ = (sel, ctx=document) => [...ctx.querySelectorAll(sel)];
-  const rand = (a,b)=> Math.floor(Math.random()*(b-a+1))+a;
-  const choice = arr => arr[rand(0,arr.length-1)];
 
   const boardEl = $('#board');
   const triesEl = $('#tries');
@@ -317,13 +319,9 @@
   const popText = $('#popText');
   const toastEl = $('#toast');
 
-  const SYMBOLS = ['cherry','star','lemon','diamond','bar'];
-  // weights for random generation (cherry >> star)
-  const WEIGHTS = { cherry: 48, star: 12, lemon: 18, diamond: 12, bar: 10 };
-
   const MAX_TRIES = 3;
   let tries = MAX_TRIES;
-  let picks = [];      // revealed ids
+  let picks = [];
   let revealedIdx = new Set();
   let best = '—';
 
@@ -348,46 +346,48 @@
   }
 
   function generateBoard(){
-    // Two modes: jackpot-possible (20%) includes exactly 3 stars, otherwise 1–2 stars
-    const jackpotPossible = Math.random() < 0.20;
-    let stars = jackpotPossible ? 3 : rand(1,2);
+    // Target: <=1% chance overall to have a winnable board.
+    // 0.9% boards => exactly 3 cherries (regular prize possible)
+    // 0.1% boards => exactly 3 stars (jackpot possible)
+    // 99% boards => unwinnable: <=2 cherries and <=2 stars.
+    const r = Math.random();
+    if (r < 0.009){ // 0.9%
+      const arr = Array(3).fill('cherry');
+      return fillOthers(arr, false);
+    } else if (r < 0.010){ // next 0.1%
+      const arr = Array(3).fill('star');
+      return fillOthers(arr, false);
+    } else {
+      // unwinnable
+      const cherries = Math.floor(Math.random()*3); // 0..2
+      const stars = Math.floor(Math.random()*3);    // 0..2
+      const arr = [];
+      for (let i=0;i<cherries;i++) arr.push('cherry');
+      for (let i=0;i<stars;i++) arr.push('star');
+      return fillOthers(arr, true);
+    }
+  }
 
-    // Ensure cherries are abundant: between 4–6 cherries, but keep total 9.
-    let cherries = rand(4,6);
-
-    // If stars=3 and cherries=6 would exceed 9, reduce cherries
-    if (cherries + stars > 9) cherries = 9 - stars - rand(0,2);
-
-    // Fill others
-    const othersSlots = 9 - (stars + cherries);
-    const othersPool = weightedArray(['lemon','diamond','bar'], [18,12,10], othersSlots);
-
-    const arr = [];
-    for (let i=0;i<cherries;i++) arr.push('cherry');
-    for (let i=0;i<stars;i++) arr.push('star');
-    arr.push(...othersPool);
-
+  function fillOthers(arr, avoidMore){
+    const OTHERS = ['lemon','diamond','bar'];
+    while (arr.length < 9){
+      let add = OTHERS[Math.floor(Math.random()*OTHERS.length)];
+      // If avoidMore=true, keep cherries<3 and stars<3
+      if (avoidMore){
+        if (add==='lemon' || add==='diamond' || add==='bar'){
+          arr.push(add);
+        }
+      } else {
+        // in prize boards don't add more cherries/stars, keep exactly 3 of that prize
+        if (add!=='cherry' && add!=='star') arr.push(add);
+      }
+    }
     // Shuffle
     for (let i=arr.length-1;i>0;i--){
-      const j = rand(0,i);
+      const j = Math.floor(Math.random()*(i+1));
       [arr[i], arr[j]] = [arr[j], arr[i]];
     }
     return arr;
-  }
-
-  function weightedArray(items, weights, count){
-    // sample with replacement by weight
-    const pool = [];
-    const sum = weights.reduce((a,b)=>a+b,0);
-    for (let k=0;k<count;k++){
-      let r = Math.random()*sum, idx=0;
-      for (let i=0;i<items.length;i++){
-        r -= weights[i];
-        if (r<=0){ idx=i; break; }
-      }
-      pool.push(items[idx]);
-    }
-    return pool;
   }
 
   function createCard(symbolId, idx){
@@ -413,13 +413,13 @@
     const idx = Number(card.dataset.index);
     if (tries<=0 || revealedIdx.has(idx)) return;
     card.classList.add('flipped');
+    card.classList.add('disabled'); // inactivate immediately
     revealedIdx.add(idx);
     picks.push(card.dataset.symbol);
     tries--;
     triesEl.textContent = String(tries);
     stateEl.textContent = tries>0 ? `Te quedan ${tries} ${tries===1?'intento':'intentos'}` : 'Sin intentos';
 
-    // haptic (best effort)
     if (navigator.vibrate) navigator.vibrate(12);
 
     evaluateProgress();
@@ -433,13 +433,13 @@
     const count = (sym)=> picks.filter(x=>x===sym).length;
     const cCherry = count('cherry');
     const cStar = count('star');
-    if (cCherry>=3){ best='Premio'; bestEl.textContent = 'Premio (3 cerezas)'; }
-    if (cStar>=3){ best='PREMIO MAYOR'; bestEl.textContent = 'PREMIO MAYOR (3 estrellas)'; }
+    if (cCherry>=3){ best='Premio (3 cerezas)'; bestEl.textContent = best; }
+    if (cStar>=3){ best='PREMIO MAYOR (3 estrellas)'; bestEl.textContent = best; }
   }
 
   function endRound(){
     // Disable further flips
-    $$('.card').forEach(c => c.style.pointerEvents='none');
+    $$('.card').forEach(c => c.classList.add('disabled'));
     againBtn.style.display = 'inline-block';
     const cCherry = picks.filter(x=>x==='cherry').length;
     const cStar = picks.filter(x=>x==='star').length;
@@ -458,7 +458,6 @@
     popText.textContent = text;
     popBadge.textContent = isJackpot ? 'PREMIO MAYOR' : 'PREMIO';
     overlayEl.classList.add('show');
-    // subtle longer vibration
     if (navigator.vibrate) navigator.vibrate([16, 40, 16]);
   }
 
@@ -470,6 +469,10 @@
     toastEl.classList.add('show');
     clearTimeout(toast._t);
     toast._t = setTimeout(()=> toastEl.classList.remove('show'), 2000);
+  }
+
+  function svgIcon(id){
+    return `<svg viewBox="0 0 44 44" width="64" height="64"><use href="#ico-${id}"></use></svg>`;
   }
 
 })();</script>
