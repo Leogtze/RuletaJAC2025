@@ -1,457 +1,200 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-<title>Slot Machine — Casino Clásico</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Tragamonedas JAC — 10 Tiradas</title>
 <style>
-/* =========================
-   THEME & RESET
-   ========================= */
 :root{
-  /* Paleta principal (morado/fucsia + dorados) */
-  --bg1:#2d0653;
-  --bg2:#4b0d83;
-  --bg3:#7a1fd0;
-  --fx-pink:#ff3fb1;
-  --fx-fuchsia:#ff49c3;
-  --gold1:#f9d66b;
-  --gold2:#e7b93c;
-  --gold3:#c68a16;
-  --gold-hi:#fff4c9;
-  --panel:#1b0a2e;
-  --text:#fff;
-  --muted:#d8cfff;
-
-  --cell-w: 128px;   /* se reescala con clamp más abajo */
-  --cell-h: 128px;
-  --grid-gap: 10px;
-  --radius: 18px;
-  --shadow-strong: 0 10px 30px rgba(0,0,0,.45);
-  --glow: 0 0 18px rgba(255, 217, 120, .55), 0 0 38px rgba(255, 120, 255, .25);
+  --bg1:#140428; --bg2:#2f0a5a; --bg3:#4b0d83; --bg4:#7a1fd0;
+  --fx-pink:#ff42c1; --fx-violet:#a86bff;
+  --gold1:#ffeaa8; --gold2:#f6cf61; --gold3:#d79a1a; --gold4:#8b5c00; --gold-hi:#fff7d9;
+  --text:#fff; --muted:#dacfff; --radius:20px; --gap:12px;
+  --cell:clamp(68px, 15vw, 130px);
+  --spin-ms-1:3500; --spin-step:180;
 }
-*{box-sizing:border-box}
-html,body{height:100%}
+*{box-sizing:border-box} html,body{height:100%}
 body{
-  margin:0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, "Helvetica Neue", Arial, "Segoe UI Variable", "SF Pro", sans-serif;
-  color:var(--text);
+  margin:0; color:var(--text);
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, Ubuntu, "Noto Sans", "Helvetica Neue", Arial, sans-serif;
   background:
-    radial-gradient(1200px 600px at 70% -10%, rgba(255,255,255,.06), transparent 60%),
-    radial-gradient(900px 500px at 20% 0%, rgba(255,115,230,.08), transparent 70%),
-    linear-gradient(180deg, var(--bg3) 0%, var(--bg1) 85%);
+    radial-gradient(1100px 600px at 80% -10%, rgba(255,255,255,.08), transparent 60%),
+    radial-gradient(900px 500px at 15% 5%, rgba(255,120,255,.10), transparent 70%),
+    linear-gradient(180deg, var(--bg4) 0%, var(--bg1) 86%);
   overflow-x:hidden;
 }
-
-/* Bokeh + partículas de fondo */
-.bg-bokeh{
-  position:fixed; inset:0; pointer-events:none; z-index:0;
+.bg{position:fixed; inset:0; pointer-events:none; z-index:0;
   background-image:
-    radial-gradient(40px 40px at 15% 25%, rgba(255,255,255,.09), transparent 60%),
-    radial-gradient(60px 60px at 30% 18%, rgba(255,255,255,.06), transparent 60%),
-    radial-gradient(80px 80px at 70% 30%, rgba(255,255,255,.07), transparent 60%),
+    radial-gradient(48px 48px at 10% 20%, rgba(255,255,255,.09), transparent 60%),
+    radial-gradient(80px 80px at 35% 15%, rgba(255,255,255,.05), transparent 60%),
+    radial-gradient(70px 70px at 70% 28%, rgba(255,255,255,.06), transparent 60%),
     radial-gradient(60px 60px at 85% 70%, rgba(255,255,255,.05), transparent 60%),
-    radial-gradient(50px 50px at 40% 80%, rgba(255,255,255,.06), transparent 60%);
-  opacity:.8;
-  filter:saturate(120%);
+    radial-gradient(60px 60px at 50% 80%, rgba(255,255,255,.05), transparent 60%);
+  opacity:.9; filter:saturate(115%);
 }
-
-/* =========================
-   LAYOUT
-   ========================= */
-.app{
-  position:relative; z-index:1;
-  min-height:100%; display:flex; align-items:center; justify-content:center;
-  padding: clamp(14px, 3vmin, 20px);
-}
-.slot{
-  width:min(1120px, 96vw);
-  display:grid; gap: clamp(10px, 2vmin, 16px);
-  grid-template-rows:auto auto 1fr auto;
-}
-
-/* Header / Panel superior */
-.header{
-  display:grid;
-  grid-template-columns: 1fr auto 1fr;
-  align-items:center; gap:12px;
-}
+.app{min-height:100%; display:flex; align-items:center; justify-content:center; padding:16px}
+.wrapper{width:min(1180px, 96vw); display:grid; gap:14px; grid-template-rows:auto auto 1fr auto}
+.top{display:grid; gap:10px; align-items:center; grid-template-columns:1fr auto 1fr}
 .brand{
-  font-weight:900; letter-spacing: .06em; text-transform:uppercase;
-  font-size: clamp(20px, 3.3vmin, 28px);
-  justify-self:start;
-  background: linear-gradient(180deg, var(--gold1), var(--gold2) 45%, var(--gold3));
+  justify-self:start; font-weight:1000; letter-spacing:.08em; text-transform:uppercase;
+  font-size:clamp(18px,3.2vmin,28px);
+  background:linear-gradient(180deg, var(--gold1), var(--gold2) 45%, var(--gold3));
   -webkit-background-clip:text; background-clip:text; color:transparent;
-  text-shadow: 0 1px 0 #7e5a00, 0 2px 10px rgba(255,220,120,.45);
+  text-shadow:0 1px 0 var(--gold4), 0 2px 10px rgba(255,220,120,.45);
 }
-.counters{
-  display:flex; gap:10px; justify-content:center; align-items:stretch; flex-wrap:wrap;
-}
-.counter{
-  background:radial-gradient(180% 160% at 50% -60%, rgba(255,255,255,.28), rgba(255,255,255,.02) 50%, transparent 60%),
-             linear-gradient(180deg, #35204f, #180b2b);
-  border:2px solid rgba(255,255,255,.06);
-  padding:10px 14px; border-radius:14px; min-width:160px;
-  box-shadow: var(--shadow-strong);
-}
-.counter b{display:block; font-size:12px; color:var(--muted); letter-spacing:.06em}
-.counter span{font-weight:800; font-size: clamp(18px, 2.6vmin, 22px)}
-.actions{justify-self:end; display:flex; gap:10px; align-items:center}
-
-/* Botones */
-.btn{
-  appearance:none; border:none; cursor:pointer;
-  font-weight:900; letter-spacing:.06em; text-transform:uppercase;
-  padding:12px 18px; border-radius:14px; color:#2b0a1f;
-  background:linear-gradient(180deg, var(--gold1) 0%, var(--gold2) 45%, var(--gold3) 100%);
-  box-shadow: 0 6px 0 #8b5c00, var(--glow);
-  position:relative; overflow:hidden;
-}
-.btn:before{
-  content:""; position:absolute; inset:0; pointer-events:none;
-  background:linear-gradient(90deg, transparent, rgba(255,255,255,.35) 40%, rgba(255,255,255,.1) 60%, transparent);
-  transform: translateX(-120%); filter: blur(1px);
-}
-.btn:hover:before{animation:shine 1300ms ease}
-@keyframes shine{
-  to{ transform: translateX(120%) }
-}
-.btn:disabled{
-  opacity:.6; cursor:not-allowed; filter:saturate(.6);
-  box-shadow: 0 6px 0 #7a5a17;
-}
-.btn.secondary{
-  color:#fff; background: linear-gradient(180deg, #6b1bb3, #3f0c6c);
-  border:1px solid rgba(255,255,255,.18); box-shadow: 0 6px 0 #2b094a, 0 0 16px rgba(255,120,255,.35);
-}
-
-/* =========================
-   MACHINE FRAME
-   ========================= */
-.machine{
-  position:relative;
-  padding: clamp(10px, 2vmin, 16px);
-  border-radius: var(--radius);
+.stats{display:flex; gap:10px; justify-content:center; flex-wrap:wrap}
+.pill{
   background:
-    linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,0)),
-    linear-gradient(180deg,#2d0a52,#15062a 80%);
-  box-shadow: var(--shadow-strong);
-  border: 3px solid transparent;
-  background-clip: padding-box, border-box;
+    radial-gradient(160% 120% at 50% -60%, rgba(255,255,255,.2), rgba(255,255,255,.04) 60%, transparent),
+    linear-gradient(180deg,#3a1d63,#1a0d2c);
+  border:1px solid rgba(255,255,255,.14);
+  border-radius:14px; padding:10px 14px; min-width:160px;
+  box-shadow:0 10px 30px rgba(0,0,0,.45);
+}
+.pill b{display:block; font-size:12px; color:var(--muted); letter-spacing:.06em}
+.pill span{font-weight:900; font-size:clamp(18px,2.7vmin,22px)}
+.actions{display:flex; gap:10px; justify-self:end; align-items:center}
+.btn{
+  appearance:none; border:none; cursor:pointer; position:relative; overflow:hidden;
+  font-weight:1000; letter-spacing:.08em; text-transform:uppercase;
+  padding:12px 18px; border-radius:14px;
+  color:#2b0a1f;
+  background:linear-gradient(180deg, var(--gold1), var(--gold2) 55%, var(--gold3));
+  box-shadow:0 6px 0 var(--gold4), 0 0 24px rgba(255, 120, 255, .25);
+}
+.btn:before{content:""; position:absolute; inset:0; background:linear-gradient(90deg, transparent, rgba(255,255,255,.35) 40%, rgba(255,255,255,.12) 60%, transparent); transform:translateX(-120%)}
+.btn:hover:before{animation:shine 1200ms ease} @keyframes shine{to{transform:translateX(120%)}}
+.btn:disabled{opacity:.6; cursor:not-allowed; box-shadow:0 6px 0 #7d5a1a}
+.btn.neon{color:#fff; background:linear-gradient(180deg,#ff48c9,#7a1fd0); border:1px solid rgba(255,255,255,.18); box-shadow:0 6px 0 #3a0a67, 0 0 22px rgba(168,107,255,.55)}
+.machine{
+  position:relative; padding: clamp(10px, 1.8vmin, 16px); border-radius: var(--radius);
+  background: linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,0)), linear-gradient(180deg,#2c0a52,#140428 78%);
+  box-shadow:0 14px 40px rgba(0,0,0,.55); border:3px solid transparent; background-clip:padding-box, border-box;
 }
 .machine:before{
-  /* Borde dorado con brillo animado */
-  content:""; position:absolute; inset:-3px; border-radius: calc(var(--radius) + 3px);
-  background: linear-gradient(135deg, var(--gold3), var(--gold2) 35%, var(--gold1) 50%, var(--gold2) 65%, var(--gold3));
-  -webkit-mask:
-    linear-gradient(#000 0 0) content-box,
-    linear-gradient(#000 0 0);
-  -webkit-mask-composite: xor; mask-composite: exclude;
-  padding:3px; z-index:-1;
-  animation:borderGlow 5s linear infinite;
-  box-shadow: inset 0 0 20px rgba(255,220,120,.4), 0 0 30px rgba(255,120,255,.15);
+  content:""; position:absolute; inset:-3px; border-radius:calc(var(--radius) + 3px);
+  padding:3px; background:conic-gradient(from 0deg, var(--gold3), var(--gold2), var(--gold1), var(--gold2), var(--gold3));
+  -webkit-mask:linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite:xor; mask-composite:exclude;
+  animation:borderHue 6s linear infinite; box-shadow:inset 0 0 24px rgba(255,230,160,.55), 0 0 30px rgba(255,120,255,.2);
 }
-@keyframes borderGlow{
-  0%{filter: hue-rotate(0deg)} 100%{filter:hue-rotate(360deg)}
-}
-
-/* GRID 5x3 */
+@keyframes borderHue{to{filter:hue-rotate(360deg)}}
 .grid{
-  --cell-w: clamp(64px, 15vw, 120px);
-  --cell-h: clamp(64px, 15vw, 120px);
-  display:grid; gap: var(--grid-gap);
-  grid-template-columns: repeat(5, var(--cell-w));
-  grid-auto-rows: var(--cell-h);
-  justify-content:center; padding: clamp(6px, 1.5vmin, 12px);
-  background: radial-gradient(120% 180% at 50% -20%, rgba(255,255,255,.06), transparent 60%),
-              linear-gradient(180deg,#21073b,#110322);
-  border-radius: 14px;
-  box-shadow: inset 0 8px 40px rgba(0,0,0,.55);
-  position:relative; overflow:hidden;
+  position:relative; z-index:2; display:grid; gap:var(--gap);
+  grid-template-columns:repeat(5,var(--cell)); grid-auto-rows:var(--cell);
+  justify-content:center; padding: clamp(8px,1.6vmin,12px);
+  background: radial-gradient(120% 180% at 50% -20%, rgba(255,255,255,.06), transparent 60%), linear-gradient(180deg,#23063e,#120223);
+  border-radius:14px; box-shadow: inset 0 10px 40px rgba(0,0,0,.6); overflow:hidden;
 }
-
-/* Celdas & carretes */
-.reel{
-  position:relative; overflow:hidden; border-radius:12px;
-  background: linear-gradient(180deg,#18042d,#0d0219);
-  border: 1px solid rgba(255,255,255,.06);
-  box-shadow: inset 0 0 0 2px rgba(0,0,0,.35), inset 0 -10px 30px rgba(255,0,255,.1);
-}
-.reel .strip{
-  position:absolute; top:0; left:0; right:0;
-  will-change: transform;
-}
-.cell{
-  width:100%; height:var(--cell-h);
-  display:flex; align-items:center; justify-content:center;
-}
-.symbol{
-  width:75%; height:75%;
-  filter: drop-shadow(0 2px 0 rgba(0,0,0,.4)) drop-shadow(0 8px 14px rgba(0,0,0,.35));
-}
-
-/* Glow de línea ganadora */
-.win{
-  outline: 4px solid var(--gold1);
-  box-shadow: 0 0 0 3px rgba(255,255,255,.15) inset, 0 0 22px 6px rgba(255,220,120,.65);
-  border-radius: 10px;
-}
-
-/* Motion blur en giro */
-.spinning .strip{ filter: url(#motion-blur) }
-.reel.stop-bounce .strip{ animation: bounceStop 220ms cubic-bezier(.2, .9, .25, 1.2) }
-@keyframes bounceStop{
-  0%{ transform: translateY(var(--ty-end)); }
-  50%{ transform: translateY(calc(var(--ty-end) + 6px)); }
-  100%{ transform: translateY(var(--ty-end)); }
-}
-
-/* Panel inferior */
-.controls{
-  display:flex; gap:12px; align-items:center; justify-content:center; flex-wrap:wrap;
-}
-.status{
-  font-weight:700; min-height:1.5em; text-align:center;
-  text-shadow:0 2px 0 #16062b, 0 0 18px rgba(255,180,255,.35);
-}
-
-/* Partículas de monedas */
-.coins{ pointer-events:none; position:absolute; inset:0; overflow:hidden; z-index:5 }
-.coin{
-  position:absolute; top:-40px; width:24px; height:24px; border-radius:50%;
-  background: radial-gradient(circle at 30% 30%, var(--gold-hi), var(--gold1) 40%, var(--gold2) 60%, var(--gold3) 95%);
-  box-shadow: 0 2px 0 #8b5c00, 0 8px 18px rgba(0,0,0,.4);
-  animation: fall linear forwards;
-}
-@keyframes fall{
-  to{ transform: translateY(120vh) rotate(360deg) }
-}
-
-/* Tipos “JACKPOT”, “SPIN”, “777” */
-.big-title{
-  text-align:center; font-weight:1000; letter-spacing:.08em; text-transform:uppercase;
-  font-size: clamp(22px, 4.2vmin, 34px);
-  background: linear-gradient(180deg, #ffe9a6, #ffdb64 45%, #c98a16);
+.reel{position:relative; overflow:hidden; border-radius:14px; background:linear-gradient(180deg,#140428,#0a0316); border:1px solid rgba(255,255,255,.08)}
+.strip{position:absolute; left:0; right:0; top:0; will-change:transform}
+.cell{width:100%; height:var(--cell); display:flex; align-items:center; justify-content:center}
+.symbol{width:78%; height:78%; filter:drop-shadow(0 2px 0 rgba(0,0,0,.5)) drop-shadow(0 10px 16px rgba(0,0,0,.45))}
+.spinning .strip{filter:url(#motion-blur)}
+.win{outline:4px solid var(--gold1); box-shadow:0 0 0 3px rgba(255,255,255,.15) inset, 0 0 22px 6px rgba(255,220,120,.7); border-radius:12px; animation:winPulse .9s ease-in-out 2}
+@keyframes winPulse{0%{transform:scale(1)}50%{transform:scale(1.03)}100%{transform:scale(1)}}
+.reel.stop .strip{animation:bounce 220ms cubic-bezier(.2,.9,.25,1.2)}
+@keyframes bounce{0%{transform:translateY(var(--endY))}50%{transform:translateY(calc(var(--endY) + 6px))}100%{transform:translateY(var(--endY))}}
+.controls{display:flex; gap:12px; justify-content:center; align-items:center; flex-wrap:wrap}
+.status{min-height:1.5em; text-align:center; font-weight:800; text-shadow:0 2px 0 #16062b, 0 0 18px rgba(255,180,255,.35)}
+.small{opacity:.8; font-size:12px}
+.coins{pointer-events:none; position:absolute; inset:0; overflow:hidden; z-index:5}
+.coin{position:absolute; top:-40px; width:24px; height:24px; border-radius:50%; background: radial-gradient(circle at 30% 30%, var(--gold-hi), var(--gold1) 40%, var(--gold2) 60%, var(--gold3) 95%); box-shadow:0 2px 0 var(--gold4), 0 10px 18px rgba(0,0,0,.45); animation:fall linear forwards}
+@keyframes fall{to{transform:translateY(120vh) rotate(360deg)}}
+.title3d{text-align:center; font-weight:1000; letter-spacing:.09em; text-transform:uppercase; font-size:clamp(22px,4.2vmin,36px);
+  background:linear-gradient(180deg,#fff4c9,#ffd463 45%,#c98a16);
   -webkit-background-clip:text; background-clip:text; color:transparent;
-  text-shadow: 0 2px 0 #7e5a00, 0 4px 24px rgba(255,220,120,.55), 0 0 24px rgba(255, 90, 200, .3);
+  text-shadow:0 2px 0 var(--gold4), 0 4px 24px rgba(255,220,120,.55), 0 0 24px rgba(255,90,200,.3);
 }
-
-/* Responsivo */
-@media (max-width: 480px){
-  .counter{min-width:138px}
-  .btn{padding:12px 16px}
-}
-
-/* Accesibilidad: foco visible */
-:focus-visible{ outline:3px solid var(--fx-pink); outline-offset:2px; border-radius:10px }
+@media (max-width:480px){ .pill{min-width:140px} .btn{padding:12px 16px} }
+:focus-visible{outline:3px solid var(--fx-pink); outline-offset:2px; border-radius:10px}
 </style>
 </head>
 <body>
-<div class="bg-bokeh"></div>
+<div class="bg"></div>
 
 <div class="app">
-  <main class="slot" aria-label="Slot machine clásico">
-    <div class="header" role="region" aria-label="Panel de crédito y apuesta">
-      <div class="brand">★ A TRUE CASINO EXPERIENCE</div>
-      <div class="counters">
-        <div class="counter" aria-live="polite" aria-atomic="true"><b>Saldo</b><span id="credits">—</span></div>
-        <div class="counter"><b>Apuesta</b><span id="bet">—</span></div>
-        <div class="counter"><b>Ganancia del spin</b><span id="lastWin">0</span></div>
+  <div class="wrapper" aria-label="Tragamonedas JAC">
+    <div class="top" role="region" aria-label="Panel superior">
+      <div class="brand">Tragamonedas JAC</div>
+      <div class="stats">
+        <div class="pill" aria-live="polite"><b>Tiradas restantes</b><span id="spinsLeft">10</span></div>
+        <div class="pill"><b>Ganancia del spin</b><span id="lastWin">0</span></div>
       </div>
       <div class="actions">
-        <button class="btn secondary" id="soundBtn" aria-pressed="true" title="Sonido ON/OFF">🔊 Sonido</button>
+        <button id="soundBtn" class="btn neon" aria-pressed="true" title="Sonido ON/OFF">🔊 Sonido</button>
       </div>
     </div>
 
     <div class="machine">
-      <div class="big-title" id="jackpotBanner" style="opacity:.0; transition:opacity .4s ease">JACKPOT</div>
-      <div class="grid" id="grid" aria-label="Carretes de la máquina">
-        <!-- Se crean 5 carretes por JS -->
+      <div id="jackBanner" class="title3d" style="opacity:0; transition:opacity .35s">JACKPOT</div>
+      <div class="grid" id="grid" aria-label="Carretes (5×3)">
+        <!-- reels via JS -->
       </div>
       <div class="coins" id="coins"></div>
     </div>
 
     <div class="controls" role="region" aria-label="Controles">
-      <button id="spinBtn" class="btn" aria-label="Girar carretes (SPIN)">SPIN</button>
+      <button id="spinBtn" class="btn" aria-label="Girar (SPIN)">SPIN</button>
+      <div class="small">20 líneas | Enter = Spin</div>
     </div>
-    <div class="status" id="status" aria-live="polite" aria-atomic="true"></div>
-  </main>
+    <div id="status" class="status" aria-live="polite" aria-atomic="true"></div>
+  </div>
 </div>
 
-<!-- =============== SVG DEFS (símbolos reutilizables) =============== -->
+<!-- ======= SVG defs (iconos) ======= -->
 <svg width="0" height="0" style="position:absolute">
   <defs>
-    <!-- Filtro simple de motion blur -->
-    <filter id="motion-blur" x="-10%" y="-10%" width="120%" height="120%">
-      <feGaussianBlur stdDeviation="0 2" edgeMode="duplicate"/>
-    </filter>
-
-    <!-- Contorno dorado común con brillo -->
+    <filter id="motion-blur" x="-10%" y="-10%" width="120%" height="120%"><feGaussianBlur stdDeviation="0 2" edgeMode="duplicate"/></filter>
     <linearGradient id="goldGrad" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#fff4cf"/>
-      <stop offset="0.4" stop-color="#f9d66b"/>
-      <stop offset="0.7" stop-color="#e7b93c"/>
-      <stop offset="1" stop-color="#c68a16"/>
+      <stop offset="0" stop-color="#fff6d0"/><stop offset="0.45" stop-color="#f6cf61"/><stop offset="0.75" stop-color="#d79a1a"/><stop offset="1" stop-color="#8b5c00"/>
     </linearGradient>
     <radialGradient id="specular" cx="30%" cy="25%" r="60%">
-      <stop offset="0" stop-color="rgba(255,255,255,.85)"/>
-      <stop offset="0.4" stop-color="rgba(255,255,255,.35)"/>
-      <stop offset="1" stop-color="rgba(255,255,255,0)"/>
+      <stop offset="0" stop-color="rgba(255,255,255,.85)"/><stop offset="0.4" stop-color="rgba(255,255,255,.35)"/><stop offset="1" stop-color="rgba(255,255,255,0)"/>
     </radialGradient>
-
-    <!-- Marco y brillo para cada icono -->
-    <g id="badge">
-      <rect x="2" y="2" width="116" height="116" rx="22" ry="22"
-         fill="url(#specular)"/>
-      <rect x="2" y="2" width="116" height="116" rx="22" ry="22" fill="none" stroke="url(#goldGrad)" stroke-width="6"/>
-    </g>
-
-    <!-- 777 -->
+    <g id="badge"><rect x="2" y="2" width="116" height="116" rx="22" ry="22" fill="url(#specular)"/><rect x="2" y="2" width="116" height="116" rx="22" ry="22" fill="none" stroke="url(#goldGrad)" stroke-width="6"/></g>
     <g id="sym-SEVEN">
       <use href="#badge"/>
-      <rect x="8" y="8" width="104" height="104" rx="18" fill="url(#grad777)"/>
-      <linearGradient id="grad777" x1="0" x2="0" y1="0" y2="1">
-        <stop offset="0" stop-color="#ff4b4b"/>
-        <stop offset="0.55" stop-color="#c30d0d"/>
-        <stop offset="1" stop-color="#7c0303"/>
-      </linearGradient>
-      <g transform="translate(12,16)">
-        <path d="M16,20 L56,20 L36,72 L16,72 L38,28 L16,28 Z" fill="#ffd7d7" stroke="#420000" stroke-width="5"/>
-        <path d="M44,20 L84,20 L64,72 L44,72 L66,28 L44,28 Z" fill="#ffd7d7" stroke="#420000" stroke-width="5"/>
-      </g>
+      <linearGradient id="grad777" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#ff5050"/><stop offset="0.55" stop-color="#b90505"/><stop offset="1" stop-color="#6b0000"/></linearGradient>
+      <rect x="10" y="10" width="100" height="100" rx="18" fill="url(#grad777)"/>
+      <g transform="translate(12,16)"><path d="M16,20 L56,20 L36,72 L16,72 L38,28 L16,28 Z" fill="#ffe2e2" stroke="#3d0000" stroke-width="5"/>
+        <path d="M44,20 L84,20 L64,72 L44,72 L66,28 L44,28 Z" fill="#ffe2e2" stroke="#3d0000" stroke-width="5"/></g>
     </g>
-
-    <!-- Estrella -->
-    <g id="sym-STAR">
-      <use href="#badge"/>
-      <g transform="translate(18,18)">
-        <radialGradient id="starFill" cx="35%" cy="30%" r="70%">
-          <stop offset="0" stop-color="#fff5b0"/>
-          <stop offset="0.4" stop-color="#ffd24e"/>
-          <stop offset="1" stop-color="#ff9f0f"/>
-        </radialGradient>
-        <path d="M40 0 L49 28 L78 28 L54 44 L63 72 L40 54 L17 72 L26 44 L2 28 L31 28 Z"
-              fill="url(#starFill)" stroke="url(#goldGrad)" stroke-width="5" />
-      </g>
-    </g>
-
-    <!-- Campana -->
-    <g id="sym-BELL">
-      <use href="#badge"/>
-      <g transform="translate(22,18)">
-        <linearGradient id="bellFill" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stop-color="#ffe9a6"/>
-          <stop offset="1" stop-color="#e5a10a"/>
-        </linearGradient>
-        <path d="M44 10a10 10 0 0 0-20 0c-14 8-20 28-18 44h56c2-16-4-36-18-44z"
-              fill="url(#bellFill)" stroke="url(#goldGrad)" stroke-width="5"/>
-        <circle cx="34" cy="66" r="8" fill="#ffd24e" stroke="#a96a00" stroke-width="4"/>
-      </g>
-    </g>
-
-    <!-- Cereza -->
-    <g id="sym-CHERRY">
-      <use href="#badge"/>
-      <g transform="translate(18,18)">
-        <radialGradient id="cherry" cx="30%" cy="30%" r="60%">
-          <stop offset="0" stop-color="#ff9aa0"/>
-          <stop offset="1" stop-color="#b10216"/>
-        </radialGradient>
-        <circle cx="30" cy="60" r="16" fill="url(#cherry)" stroke="#53000a" stroke-width="5"/>
-        <circle cx="58" cy="64" r="16" fill="url(#cherry)" stroke="#53000a" stroke-width="5"/>
-        <path d="M38 46C36 36 46 28 64 28" fill="none" stroke="#4d8f3a" stroke-width="6"/>
-        <path d="M58 30c10-14 22-12 30-12" fill="none" stroke="url(#goldGrad)" stroke-width="4"/>
-        <ellipse cx="64" cy="26" rx="10" ry="6" fill="#3ea23f"/>
-      </g>
-    </g>
-
-    <!-- Limón -->
-    <g id="sym-LEMON">
-      <use href="#badge"/>
-      <g transform="translate(16,24)">
-        <radialGradient id="lemon" cx="40%" cy="30%" r="60%">
-          <stop offset="0" stop-color="#fff9b5"/>
-          <stop offset="1" stop-color="#f3c213"/>
-        </radialGradient>
-        <ellipse cx="48" cy="40" rx="36" ry="26" fill="url(#lemon)" stroke="#a36b00" stroke-width="6"/>
-        <path d="M84 38c-6-8-6-14 0-22 8 6 10 16 0 22z" fill="#3ea23f" stroke="#1e5e1f" stroke-width="4"/>
-      </g>
-    </g>
-
-    <!-- Naranja -->
-    <g id="sym-ORANGE">
-      <use href="#badge"/>
-      <g transform="translate(16,18)">
-        <radialGradient id="orange" cx="35%" cy="30%" r="60%">
-          <stop offset="0" stop-color="#ffd2a0"/>
-          <stop offset="1" stop-color="#ff8c20"/>
-        </radialGradient>
-        <circle cx="50" cy="52" r="28" fill="url(#orange)" stroke="#a95005" stroke-width="6"/>
-        <circle cx="58" cy="36" r="6" fill="#fff" opacity=".35"/>
-        <path d="M44 26c8-8 20-8 28 0" stroke="#3ea23f" stroke-width="6" fill="none"/>
-      </g>
-    </g>
-
-    <!-- Uva -->
-    <g id="sym-GRAPE">
-      <use href="#badge"/>
-      <g transform="translate(18,18)">
-        <radialGradient id="grape" cx="40%" cy="40%" r="60%">
-          <stop offset="0" stop-color="#d3c6ff"/>
-          <stop offset="1" stop-color="#401b84"/>
-        </radialGradient>
-        <g fill="url(#grape)" stroke="#240555" stroke-width="5">
-          <circle cx="38" cy="66" r="10"/><circle cx="50" cy="66" r="10"/><circle cx="62" cy="66" r="10"/>
-          <circle cx="44" cy="54" r="10"/><circle cx="56" cy="54" r="10"/>
-          <circle cx="50" cy="42" r="10"/>
-        </g>
-        <path d="M50 26c6-10 10-10 18-10" stroke="#3ea23f" stroke-width="6" fill="none"/>
-      </g>
-    </g>
-
-    <!-- Kiwi -->
-    <g id="sym-KIWI">
-      <use href="#badge"/>
-      <g transform="translate(16,20)">
-        <radialGradient id="kiwi" cx="50%" cy="50%" r="48%">
-          <stop offset="0" stop-color="#e8ffd8"/>
-          <stop offset="0.45" stop-color="#a3e36d"/>
-          <stop offset="1" stop-color="#4ea82f"/>
-        </radialGradient>
-        <circle cx="50" cy="50" r="28" fill="url(#kiwi)" stroke="#1b5d14" stroke-width="6"/>
-        <g stroke="#1c3f12" stroke-width="3">
-          <line x1="50" y1="22" x2="50" y2="78"/><line x1="22" y1="50" x2="78" y2="50"/>
-          <line x1="32" y1="32" x2="68" y2="68"/><line x1="68" y1="32" x2="32" y2="68"/>
-        </g>
-      </g>
-    </g>
-
-    <!-- Ciruela -->
-    <g id="sym-PLUM">
-      <use href="#badge"/>
-      <g transform="translate(18,24)">
-        <radialGradient id="plum" cx="40%" cy="30%" r="60%">
-          <stop offset="0" stop-color="#e0ccff"/>
-          <stop offset="1" stop-color="#6113b0"/>
-        </radialGradient>
-        <ellipse cx="46" cy="36" rx="28" ry="22" fill="url(#plum)" stroke="#2b035f" stroke-width="6"/>
-        <path d="M64 18c6-8 16-10 22-10" stroke="#3ea23f" stroke-width="6" fill="none"/>
-      </g>
-    </g>
+    <g id="sym-STAR"><use href="#badge"/><g transform="translate(18,18)"><radialGradient id="starFill" cx="35%" cy="30%" r="70%"><stop offset="0" stop-color="#fff5b0"/><stop offset="0.4" stop-color="#ffd24e"/><stop offset="1" stop-color="#ff9f0f"/></radialGradient>
+      <path d="M40 0 L49 28 L78 28 L54 44 L63 72 L40 54 L17 72 L26 44 L2 28 L31 28 Z" fill="url(#starFill)" stroke="url(#goldGrad)" stroke-width="5"/></g></g>
+    <g id="sym-BELL"><use href="#badge"/><g transform="translate(22,18)"><linearGradient id="bellFill" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffe9a6"/><stop offset="1" stop-color="#e5a10a"/></linearGradient>
+      <path d="M44 10a10 10 0 0 0-20 0c-14 8-20 28-18 44h56c2-16-4-36-18-44z" fill="url(#bellFill)" stroke="url(#goldGrad)" stroke-width="5"/>
+      <circle cx="34" cy="66" r="8" fill="#ffd24e" stroke="#a96a00" stroke-width="4"/></g></g>
+    <g id="sym-CHERRY"><use href="#badge"/><g transform="translate(18,18)"><radialGradient id="cherry" cx="30%" cy="30%" r="60%"><stop offset="0" stop-color="#ff9aa0"/><stop offset="1" stop-color="#b10216"/></radialGradient>
+      <circle cx="30" cy="60" r="16" fill="url(#cherry)" stroke="#53000a" stroke-width="5"/><circle cx="58" cy="64" r="16" fill="url(#cherry)" stroke="#53000a" stroke-width="5"/>
+      <path d="M38 46C36 36 46 28 64 28" fill="none" stroke="#4d8f3a" stroke-width="6"/>
+      <path d="M58 30c10-14 22-12 30-12" fill="none" stroke="url(#goldGrad)" stroke-width="4"/>
+      <ellipse cx="64" cy="26" rx="10" ry="6" fill="#3ea23f"/></g></g>
+    <g id="sym-LEMON"><use href="#badge"/><g transform="translate(16,24)"><radialGradient id="lemon" cx="40%" cy="30%" r="60%"><stop offset="0" stop-color="#fff9b5"/><stop offset="1" stop-color="#f3c213"/></radialGradient>
+      <ellipse cx="48" cy="40" rx="36" ry="26" fill="url(#lemon)" stroke="#a36b00" stroke-width="6"/>
+      <path d="M84 38c-6-8-6-14 0-22 8 6 10 16 0 22z" fill="#3ea23f" stroke="#1e5e1f" stroke-width="4"/></g></g>
+    <g id="sym-ORANGE"><use href="#badge"/><g transform="translate(16,18)"><radialGradient id="orange" cx="35%" cy="30%" r="60%"><stop offset="0" stop-color="#ffd2a0"/><stop offset="1" stop-color="#ff8c20"/></radialGradient>
+      <circle cx="50" cy="52" r="28" fill="url(#orange)" stroke="#a95005" stroke-width="6"/>
+      <circle cx="58" cy="36" r="6" fill="#fff" opacity=".35"/>
+      <path d="M44 26c8-8 20-8 28 0" stroke="#3ea23f" stroke-width="6" fill="none"/></g></g>
+    <g id="sym-GRAPE"><use href="#badge"/><g transform="translate(18,18)"><radialGradient id="grape" cx="40%" cy="40%" r="60%"><stop offset="0" stop-color="#d3c6ff"/><stop offset="1" stop-color="#401b84"/></radialGradient>
+      <g fill="url(#grape)" stroke="#240555" stroke-width="5"><circle cx="38" cy="66" r="10"/><circle cx="50" cy="66" r="10"/><circle cx="62" cy="66" r="10"/><circle cx="44" cy="54" r="10"/><circle cx="56" cy="54" r="10"/><circle cx="50" cy="42" r="10"/></g>
+      <path d="M50 26c6-10 10-10 18-10" stroke="#3ea23f" stroke-width="6" fill="none"/></g></g>
+    <g id="sym-KIWI"><use href="#badge"/><g transform="translate(16,20)"><radialGradient id="kiwi" cx="50%" cy="50%" r="48%"><stop offset="0" stop-color="#e8ffd8"/><stop offset="0.45" stop-color="#a3e36d"/><stop offset="1" stop-color="#4ea82f"/></radialGradient>
+      <circle cx="50" cy="50" r="28" fill="url(#kiwi)" stroke="#1b5d14" stroke-width="6"/>
+      <g stroke="#1c3f12" stroke-width="3"><line x1="50" y1="22" x2="50" y2="78"/><line x1="22" y1="50" x2="78" y2="50"/><line x1="32" y1="32" x2="68" y2="68"/><line x1="68" y1="32" x2="32" y2="68"/></g></g></g>
+    <g id="sym-PLUM"><use href="#badge"/><g transform="translate(18,24)"><radialGradient id="plum" cx="40%" cy="30%" r="60%"><stop offset="0" stop-color="#e0ccff"/><stop offset="1" stop-color="#6113b0"/></radialGradient>
+      <ellipse cx="46" cy="36" rx="28" ry="22" fill="url(#plum)" stroke="#2b035f" stroke-width="6"/>
+      <path d="M64 18c6-8 16-10 22-10" stroke="#3ea23f" stroke-width="6" fill="none"/></g></g>
   </defs>
 </svg>
 
 <script>
-/* ===========================================================
-   CONFIGURACIÓN
-   =========================================================== */
 const CONFIG = {
-  creditsStart: 5000,
-  betPerSpin: 50,
   reels: 5, rows: 3, lines: 20,
-  maxWinMultiplier: 50,       // Cap de ganancia: pago total máximo = apuesta * multiplicador
-  // pesos relativos por símbolo (mayor = más común)
+  // usamos bet base para escalar multiplicadores, aunque no mostramos saldo
+  betBase: 50,
+  maxWinMultiplier: 50,
   weights: { CHERRY: 8, LEMON: 8, ORANGE: 7, PLUM: 7, KIWI: 6, GRAPE: 6, STAR: 4, BELL: 3, SEVEN: 1 },
-  // pagos por cantidad en una línea (multiplicadores sobre la apuesta base)
   payouts: {
     CHERRY: {3: 5, 4: 20, 5: 60},
     LEMON:  {3: 5, 4: 20, 5: 60},
@@ -461,333 +204,158 @@ const CONFIG = {
     GRAPE:  {3:15, 4:40, 5:100},
     STAR:   {3:25, 4:80, 5:200},
     BELL:   {3:40, 4:120,5:300},
-    SEVEN:  {3:200,4:800,5:3000} // línea central de 777 = JACKPOT extra
+    SEVEN:  {3:200,4:800,5:3000}
   },
   jackpotBonus: 5000
 };
-
-// Símbolos disponibles y su orden gráfico
-const SYMBOLS = ["SEVEN","STAR","BELL","CHERRY","LEMON","ORANGE","PLUM","KIWI","GRAPE"];
-
-/* ===========================================================
-   AUDIO embebido (pequeños WAV base64)
-   =========================================================== */
-const SFX = {
-  enabled: true,
-  spin: new Audio("data:audio/wav;base64,UklGRkQAAABXQVZFZm10IBAAAAABAAEAESsAACJWAAACABYBAGZmZmZmZgAAAP//AAD///8AAP//AAAAAP//AACAgICAAAD/AACAgP8A/wAA/4AAAP8AAP+AAAD/AAAAAACAgICAgICAgP8AAAAAAAA="),
-  stop: new Audio("data:audio/wav;base64,UklGRlIAAABXQVZFZm10IBAAAAABAAEAESsAACJWAAACABYBAGZmAAD/AP//AP8AAP//AAAAAP8A/wD/AAAAAACAgAAAAP8A/wAAAP8A"),
-  win:  new Audio("data:audio/wav;base64,UklGRnIAAABXQVZFZm10IBAAAAABAAEAESsAACJWAAACABYBAGZmZmYAAAD/AP8A/4AAAP8A/4AAAP8A/4AAAP8AAP//AAAAAP8A/wAA"),
-  jack: new Audio("data:audio/wav;base64,UklGRoQAAABXQVZFZm10IBAAAAABAAEAESsAACJWAAACABYBAGZmZmZmZmZmAAAA/wD/gAAA/4AAAP+AAAD/AAAA/4AAAP8AAP//AAAA")
-};
-Object.values(SFX).forEach(a=>{ if(a instanceof Audio){a.volume=.35} });
-
-/* ===========================================================
-   ESTADO
-   =========================================================== */
-let credits = CONFIG.creditsStart;
-let bet = CONFIG.betPerSpin;
-let spinning = false;
-
-const $grid = document.getElementById('grid');
-const $credits = document.getElementById('credits');
-const $bet = document.getElementById('bet');
-const $lastWin = document.getElementById('lastWin');
-const $status = document.getElementById('status');
-const $spinBtn = document.getElementById('spinBtn');
-const $soundBtn = document.getElementById('soundBtn');
-const $coins = document.getElementById('coins');
-const $jack = document.getElementById('jackpotBanner');
-
-/* ===========================================================
-   PAYLINES (20 líneas)
-   Cada línea es un arreglo de 5 posiciones (filas 0..2)
-   =========================================================== */
-const L = {
-  TL:0, M:1, BL:2
-};
 const PAYLINES = [
-  [1,1,1,1,1], // centro
-  [0,0,0,0,0], // arriba
-  [2,2,2,2,2], // abajo
-  [0,1,2,1,0],
-  [2,1,0,1,2],
-  [0,0,1,0,0],
-  [2,2,1,2,2],
-  [1,0,1,2,1],
-  [1,2,1,0,1],
-  [0,1,1,1,0],
-  [2,1,1,1,2],
-  [0,1,0,1,0],
-  [2,1,2,1,2],
-  [1,1,0,1,1],
-  [1,1,2,1,1],
-  [0,2,0,2,0],
-  [2,0,2,0,2],
-  [0,2,1,2,0],
-  [2,0,1,0,2],
-  [1,0,2,0,1]
+  [1,1,1,1,1],[0,0,0,0,0],[2,2,2,2,2],[0,1,2,1,0],[2,1,0,1,2],
+  [0,0,1,0,0],[2,2,1,2,2],[1,0,1,2,1],[1,2,1,0,1],[0,1,1,1,0],
+  [2,1,1,1,2],[0,1,0,1,0],[2,1,2,1,2],[1,1,0,1,1],[1,1,2,1,1],
+  [0,2,0,2,0],[2,0,2,0,2],[0,2,1,2,0],[2,0,1,0,2],[1,0,2,0,1]
 ];
+const SFX = {
+  enabled:true,
+  spin:new Audio("data:audio/wav;base64,UklGRkQAAABXQVZFZm10IBAAAAABAAEAESsAACJWAAACABYBAGZmZmZmZgAAAP//AAD///8AAP//AAAAAP//AACAgICAAAD/AACAgP8A/wAA/4AAAP8AAP+AAAD/AAAAAACAgICAgICAgP8AAAAAAAA="),
+  stop:new Audio("data:audio/wav;base64,UklGRlIAAABXQVZFZm10IBAAAAABAAEAESsAACJWAAACABYBAGZmAAD/AP//AP8AAP//AAAAAP8A/wD/AAAAAACAgAAAAP8A/wAAAP8A"),
+  win:new Audio("data:audio/wav;base64,UklGRnIAAABXQVZFZm10IBAAAAABAAEAESsAACJWAAACABYBAGZmZmYAAAD/AP8A/4AAAP8A/4AAAP8A/4AAAP8AAP//AAAAAP8A/wAA"),
+  jack:new Audio("data:audio/wav;base64,UklGRoQAAABXQVZFZm10IBAAAAABAAEAESsAACJWAAACABYBAGZmZmZmZmZmAAAA/wD/gAAA/4AAAP+AAAD/AAAA/4AAAP8AAP//AAAA")
+}; Object.values(SFX).forEach(a=>{if(a instanceof Audio)a.volume=.35});
 
-/* ===========================================================
-   INIT
-   =========================================================== */
-function init(){
-  $credits.textContent = credits;
-  $bet.textContent = bet;
+let spinsLeft = 10;
+let spinning=false;
+
+const $grid=document.getElementById('grid');
+const $spinsLeft=document.getElementById('spinsLeft');
+const $lastWin=document.getElementById('lastWin');
+const $status=document.getElementById('status');
+const $spinBtn=document.getElementById('spinBtn');
+const $soundBtn=document.getElementById('soundBtn');
+const $coins=document.getElementById('coins');
+const $jackBanner=document.getElementById('jackBanner');
+
+document.addEventListener('DOMContentLoaded',()=>{
   buildGrid();
+  $spinsLeft.textContent=spinsLeft;
   $spinBtn.addEventListener('click', spin);
   document.addEventListener('keydown', e=>{ if(e.key==='Enter') $spinBtn.click(); });
   $soundBtn.addEventListener('click', ()=>{
-    SFX.enabled = !SFX.enabled;
+    SFX.enabled=!SFX.enabled;
     $soundBtn.setAttribute('aria-pressed', String(SFX.enabled));
-    $soundBtn.textContent = SFX.enabled ? '🔊 Sonido' : '🔇 Silencio';
+    $soundBtn.textContent=SFX.enabled?'🔊 Sonido':'🔇 Silencio';
   });
-}
-document.addEventListener('DOMContentLoaded', init);
+});
 
-/* Construye 5 carretes con 3 celdas visibles + buffer de símbolos para animación */
 function buildGrid(){
-  $grid.innerHTML = '';
-  for(let r=0; r<CONFIG.reels; r++){
-    const reel = document.createElement('div');
-    reel.className = 'reel';
-    const strip = document.createElement('div');
-    strip.className = 'strip';
-    // crea una secuencia alta para simular scroll
-    const sequence = [];
-    for(let i=0;i<18;i++){ sequence.push(randomSymbol()); }
-    sequence.forEach(sym=>{
-      const cell = makeCell(sym);
-      strip.appendChild(cell);
-    });
-    reel.appendChild(strip);
-    $grid.appendChild(reel);
+  $grid.innerHTML='';
+  for(let r=0;r<CONFIG.reels;r++){
+    const reel=document.createElement('div'); reel.className='reel';
+    const strip=document.createElement('div'); strip.className='strip';
+    for(let i=0;i<24;i++) strip.appendChild(makeCell(weightedPick()));
+    reel.appendChild(strip); $grid.appendChild(reel);
   }
 }
-
-/* Crea una celda con SVG inline reutilizando <use> */
 function makeCell(sym){
-  const cell = document.createElement('div');
-  cell.className = 'cell';
-  cell.dataset.symbol = sym;
-  const svg = document.createElementNS('http://www.w3.org/2000/svg','svg');
-  svg.setAttribute('viewBox','0 0 120 120');
-  svg.classList.add('symbol');
-  const use = document.createElementNS('http://www.w3.org/2000/svg','use');
-  use.setAttributeNS('http://www.w3.org/1999/xlink','href', `#sym-${sym}`);
-  svg.appendChild(use);
-  cell.appendChild(svg);
-  return cell;
+  const cell=document.createElement('div'); cell.className='cell'; cell.dataset.symbol=sym;
+  const svg=document.createElementNS('http://www.w3.org/2000/svg','svg'); svg.setAttribute('viewBox','0 0 120 120'); svg.classList.add('symbol');
+  const use=document.createElementNS('http://www.w3.org/2000/svg','use'); use.setAttributeNS('http://www.w3.org/1999/xlink','href',`#sym-${sym}`);
+  svg.appendChild(use); cell.appendChild(svg); return cell;
 }
-
-/* RNG ponderado por CONFIG.weights */
-function randomSymbol(){
-  const bag = [];
-  for(const k in CONFIG.weights){
-    const n = CONFIG.weights[k];
-    for(let i=0;i<n;i++) bag.push(k);
+function weightedPick(){
+  if(!weightedPick.bag){
+    const bag=[]; for(const k in CONFIG.weights){ for(let i=0;i<CONFIG.weights[k];i++) bag.push(k); }
+    weightedPick.bag=bag;
   }
-  return bag[Math.floor(Math.random()*bag.length)];
+  const b=weightedPick.bag; return b[(Math.random()*b.length)|0];
 }
 
-/* ===========================================================
-   SPIN & ANIMACIÓN
-   =========================================================== */
 function spin(){
   if(spinning) return;
-  if(credits < bet){
-    announce("Saldo insuficiente");
-    return;
-  }
-  spinning = true;
-  $spinBtn.disabled = true;
-  $grid.classList.add('spinning');
-  $status.textContent = 'Girando…';
-  setWinHighlights([]);
-
-  credits -= bet;
-  $credits.textContent = credits;
-  $lastWin.textContent = '0';
+  if(spinsLeft<=0){ announce('Juego terminado'); return; }
+  spinning=true; $spinBtn.disabled=true; $grid.classList.add('spinning');
+  $status.textContent='Girando…'; clearWins();
+  spinsLeft--; $spinsLeft.textContent=spinsLeft;
 
   if(SFX.enabled) SFX.spin.currentTime=0, SFX.spin.play();
 
-  // Resultado objetivo: matriz [reel][row]
-  const result = [];
-  for(let r=0;r<CONFIG.reels;r++){
-    result[r] = [];
-    for(let row=0; row<CONFIG.rows; row++){
-      result[r][row] = randomSymbol();
-    }
-  }
-
-  // Calcula pagos antes de animar (para asegurar coincidencia)
+  const result = Array.from({length:CONFIG.reels}, ()=>Array.from({length:CONFIG.rows}, ()=>weightedPick()));
   const evalData = evaluateLines(result);
-  const totalWin = applyPayout(evalData);
 
-  // Programa stops escalonados (3.5s .. 4.3s) asegurando ≤ 4.5s total
-  const base = 3500;
-  const step = 200;
-  const reels = Array.from($grid.querySelectorAll('.reel'));
-  reels.forEach((reel, i)=>{
-    stopReel(reel, result[i], base + i*step);
-  });
+  const reels=[...$grid.querySelectorAll('.reel')];
+  const base=3500, step=180;
+  reels.forEach((reel,i)=> stopReel(reel, result[i], base + i*step));
 
-  // al final, liberar botón
   setTimeout(()=>{
-    spinning = false;
-    $spinBtn.disabled = false;
-    $grid.classList.remove('spinning');
-    setWinHighlights(evalData.hitCells);
-    $lastWin.textContent = String(totalWin);
-    if(totalWin>0){
+    spinning=false; $spinBtn.disabled=false; $grid.classList.remove('spinning');
+    setHighlights(evalData.hitCells);
+    const win = applyPayout(evalData);
+    $lastWin.textContent=win;
+    if(win>0){
       if(SFX.enabled) SFX.win.currentTime=0, SFX.win.play();
-      renderWinEffects(totalWin);
-      announce(`Ganaste ${totalWin} créditos`);
-    }else{
-      announce(`Sin premio`);
-    }
-  }, base + (CONFIG.reels-1)*step + 200); // ~4.3s
+      renderWinEffects(win); announce(`Ganaste ${win} créditos`);
+    } else announce('Sin premio');
+    if(spinsLeft<=0){ $spinBtn.disabled=true; announce('Juego terminado'); }
+  }, base + (CONFIG.reels-1)*step + 240);
 }
 
-/* Detiene un carrete animando inercia y alineando píxeles */
 function stopReel(reel, symbols, durationMs){
-  const strip = reel.querySelector('.strip');
-  const cellH = strip.firstElementChild.getBoundingClientRect().height;
-  // añade símbolos destino al final para la "caída"
+  const strip=reel.querySelector('.strip');
+  const cellH=strip.firstElementChild.getBoundingClientRect().height;
   symbols.forEach(sym=> strip.appendChild(makeCell(sym)));
-  const totalCells = strip.children.length;
-  const start = performance.now();
-  const startY = 0;
-  const cycles = 5 + Math.floor(Math.random()*3); // vueltas
-  const endIndex = totalCells - CONFIG.rows; // apunta a inicio de destino
-  const endY = - (endIndex * cellH); // posición final
-  const distance = (-(cycles*CONFIG.rows*cellH)) + endY;
-
-  function easeOutCubic(t){ return 1 - Math.pow(1 - t, 3); }
-
+  const total=strip.children.length;
+  const endIndex=total - CONFIG.rows;
+  const endY=-(endIndex*cellH);
+  const cycles=5 + (Math.random()*2|0);
+  const distance=-((cycles*CONFIG.rows*cellH)) + endY;
+  const startT=performance.now(); const startY=0;
+  const ease=t=>1-Math.pow(1-t,3);
   function frame(now){
-    const elapsed = now - start;
-    const t = Math.min(1, elapsed / durationMs);
-    const eased = easeOutCubic(t);
-    const y = startY + distance * eased;
-    strip.style.transform = `translateY(${y}px)`;
-    strip.style.setProperty('--ty-end', `${endY}px`);
-    if(t < 1){
-      requestAnimationFrame(frame);
-    }else{
-      // Limpia: deja sólo las 3 celdas finales
-      // (reconstruye strip con las últimas 3)
-      const last3 = Array.from(strip.children).slice(-CONFIG.rows);
-      strip.innerHTML = '';
-      last3.forEach(n=> strip.appendChild(n));
-      strip.style.transform = `translateY(0px)`;
-      reel.classList.add('stop-bounce');
-      if(SFX.enabled){ SFX.stop.currentTime=0; SFX.stop.play(); }
-      setTimeout(()=>reel.classList.remove('stop-bounce'), 260);
+    const t=Math.min(1,(now-startT)/durationMs);
+    const y=startY + distance*ease(t);
+    strip.style.transform=`translateY(${y}px)`; strip.style.setProperty('--endY', `${endY}px`);
+    if(t<1){ requestAnimationFrame(frame); }
+    else{
+      const last3=Array.from(strip.children).slice(-CONFIG.rows);
+      strip.innerHTML=''; last3.forEach(n=> strip.appendChild(n));
+      strip.style.transform='translateY(0px)';
+      reel.classList.add('stop'); if(SFX.enabled){ SFX.stop.currentTime=0; SFX.stop.play(); }
+      setTimeout(()=>reel.classList.remove('stop'),260);
     }
   }
   requestAnimationFrame(frame);
 }
 
-/* ===========================================================
-   EVALUACIÓN DE LÍNEAS Y PAGOS
-   =========================================================== */
 function evaluateLines(result){
-  const hitCells = []; // para resaltar celdas ganadoras [ [reelIndex,rowIndex], ... ]
-  let total = 0;
-  const wins = [];
-
+  const hitCells=[]; let totalMult=0;
   for(let i=0;i<PAYLINES.length;i++){
-    const line = PAYLINES[i];
-    const first = result[0][line[0]];
-    let count = 1;
-    for(let c=1;c<CONFIG.reels;c++){
-      if(result[c][line[c]] === first) count++; else break;
-    }
+    const p=PAYLINES[i]; const first=result[0][p[0]]; let count=1;
+    for(let r=1;r<CONFIG.reels;r++){ if(result[r][p[r]]===first) count++; else break; }
     if(count>=3){
-      const table = CONFIG.payouts[first];
-      const mult = table[count] || 0;
-      if(mult>0){
-        wins.push({line:i, symbol:first, count, multiplier: mult});
-        for(let c=0;c<count;c++) hitCells.push([c,line[c]]);
-        total += mult;
-      }
+      const mult=(CONFIG.payouts[first]||{})[count]||0;
+      if(mult>0){ for(let r=0;r<count;r++) hitCells.push([r,p[r]]); totalMult+=mult; }
     }
   }
-
-  // Jackpot condición: tres 777 centrados en los carretes 1-3 en la fila central
-  const isJackpot = (result[1][1]==='SEVEN' && result[2][1]==='SEVEN' && result[3][1]==='SEVEN');
-  return {wins, totalMultiplier: total, hitCells, isJackpot};
+  const isJack=(result[1][1]==='SEVEN' && result[2][1]==='SEVEN' && result[3][1]==='SEVEN');
+  return {hitCells,totalMultiplier:totalMult,isJack};
 }
-
-/* Aplica pagos con cap de ganancia */
 function applyPayout(evalData){
-  let win = Math.round(evalData.totalMultiplier * (bet/50)); // escala por apuesta base 50
-  if(evalData.isJackpot){
-    win += CONFIG.jackpotBonus;
-    triggerJackpot();
-  }
-  const cap = CONFIG.maxWinMultiplier * bet;
-  win = Math.min(win, cap);
-  if(win>0){
-    credits += win;
-    $credits.textContent = credits;
-  }
-  return win;
+  let win = Math.round(evalData.totalMultiplier * (CONFIG.betBase/50));
+  if(evalData.isJack){ win += CONFIG.jackpotBonus; showJackpot(); }
+  const cap = CONFIG.maxWinMultiplier * CONFIG.betBase;
+  return Math.min(win, cap);
 }
-
-/* Resalta celdas ganadoras */
-function setWinHighlights(cells){
-  // Remove prev
+function setHighlights(cells){
   $grid.querySelectorAll('.cell').forEach(c=> c.classList.remove('win'));
-  // Add current (buscar por índice)
-  const reels = Array.from($grid.querySelectorAll('.reel'));
+  const reels=[...$grid.querySelectorAll('.reel')];
   cells.forEach(([x,y])=>{
-    const strip = reels[x].querySelector('.strip');
-    const cell = strip.children[y];
-    if(cell) cell.classList.add('win');
+    const cell=reels[x].querySelector('.strip').children[y]; if(cell) cell.classList.add('win');
   });
 }
-
-/* Monedas + banner jackpot */
-function renderWinEffects(amount){
-  // algunas monedas (cantidad proporcional pero limitada)
-  const n = Math.min(30, 6 + Math.floor(amount/ (bet*2)));
-  for(let i=0;i<n;i++){
-    const coin = document.createElement('div');
-    coin.className = 'coin';
-    coin.style.left = (Math.random()*100) + '%';
-    coin.style.animationDuration = (2.4 + Math.random()*1.2)+'s';
-    coin.style.animationDelay = (Math.random()*0.2)+'s';
-    coin.style.transform = `translateY(${(-20 - Math.random()*40)}px)`;
-    $coins.appendChild(coin);
-    setTimeout(()=>coin.remove(), 4000);
-  }
-}
-
-/* Jackpot animation */
-function triggerJackpot(){
-  $jack.style.opacity = 1;
-  if(SFX.enabled) { SFX.jack.currentTime=0; SFX.jack.play(); }
-  // lluvia extra
-  for(let i=0;i<40;i++){
-    const coin = document.createElement('div');
-    coin.className = 'coin';
-    coin.style.left = (Math.random()*100) + '%';
-    coin.style.animationDuration = (2.2 + Math.random()*1.2)+'s';
-    $coins.appendChild(coin);
-    setTimeout(()=>coin.remove(), 4200);
-  }
-  setTimeout(()=>{ $jack.style.opacity = 0; }, 2000);
-}
-
-/* Mensaje accesible */
-function announce(msg){
-  $status.textContent = msg;
-}
-
-/* Exponer por si deseas usar en consola */
-window.__slot = {CONFIG, spin};
+function clearWins(){ $grid.querySelectorAll('.cell').forEach(c=> c.classList.remove('win')); }
+function renderWinEffects(amount){ const n=Math.min(36, 6 + Math.floor(amount/(CONFIG.betBase*2))); for(let i=0;i<n;i++) spawnCoin(); }
+function spawnCoin(){ const c=document.createElement('div'); c.className='coin'; c.style.left=(Math.random()*100)+'%'; c.style.animationDuration=(2+Math.random()*1.4)+'s'; c.style.animationDelay=(Math.random()*0.2)+'s'; c.style.transform=`translateY(${(-20 - Math.random()*40)}px)`; $coins.appendChild(c); setTimeout(()=>c.remove(),4200); }
+function showJackpot(){ $jackBanner.style.opacity=1; if(SFX.enabled){ SFX.jack.currentTime=0; SFX.jack.play(); } for(let i=0;i<48;i++) spawnCoin(); setTimeout(()=> $jackBanner.style.opacity=0, 2300); }
+function announce(msg){ $status.textContent = msg; }
 </script>
 </body>
 </html>
